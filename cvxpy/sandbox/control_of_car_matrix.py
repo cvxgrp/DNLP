@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def solve_car_control(x_final, L=0.1, N=10, h=0.1, gamma=10):
+def solve_car_control(x_final, L=0.1, N=2, h=0.1, gamma=10):
     """
     Solve the nonlinear optimal control problem for car trajectory planning.
     
@@ -73,7 +73,7 @@ def solve_car_control(x_final, L=0.1, N=10, h=0.1, gamma=10):
     
     # Solve using an appropriate solver
     # For nonlinear problems, we might need special solver options
-    problem.solve(solver=cp.SCS, verbose=True)
+    problem.solve(solver=cp.IPOPT, nlp=True, verbose=True)
     
     # Extract solution
     x_opt = x.value
@@ -165,7 +165,7 @@ if __name__ == "__main__":
                 
         except Exception as e:
             print(f"Error: {e}")
-    
+"""
     # Additional analysis: plot control inputs
     if x_opt is not None and u_opt is not None:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
@@ -184,3 +184,4 @@ if __name__ == "__main__":
         
         plt.tight_layout()
         plt.show()
+"""
