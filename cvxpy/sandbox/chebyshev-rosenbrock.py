@@ -13,7 +13,7 @@ def chebyshev_rosenbrock(n=10):
     """
     # Variables
     x = cp.Variable(n)
-    x.value = np.random.uniform(-1, 1, n)  # Initial guess
+    x.value = np.random.uniform(0, 1, n)  # Initial guess
     # Objective function
     obj = 0.25 * cp.abs(x[0] - 1)
     
