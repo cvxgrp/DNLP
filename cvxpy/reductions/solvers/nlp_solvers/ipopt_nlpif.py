@@ -188,28 +188,22 @@ class IPOPT(NLPsolver):
         
         def gradient(self, x):
             """Returns the gradient of the objective with respect to x."""
-            # Convert to torch tensor with gradient tracking
+            # compute the gradient using _grad
             offset = 0
-            torch_exprs = []
             for var in self.main_var:
                 size = var.size
-                slice = x[offset:offset+size].reshape(var.shape, order='F')
-                torch_exprs.append(torch.from_numpy(slice.astype(np.float64)).requires_grad_(True))
+                var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
-            
-            torch_expr = TorchExpression(self.problem.objective.args[0])
-            torch_obj = torch_expr.torch_expression(*torch_exprs)
-            
-            # Compute gradient
-            torch_obj.backward()
-            gradients = []
-            for tensor in torch_exprs:
-                if tensor.grad is not None:
-                    gradients.append(tensor.grad.detach().numpy().flatten())
-                else:
-                    gradients.append(np.array([0] * tensor.numel()))
-            return np.concatenate(gradients)
-        
+            offset = 0
+            grad = np.zeros(x.size, dtype=np.float64)
+            grad_dict = self.problem.objective.expr.grad
+            for var in self.main_var:
+                size = var.size
+                if var in grad_dict:
+                    grad[offset:offset+size] = grad_dict[var]
+                offset += size
+            return grad
+
         def constraints(self, x):
             """Returns the constraint values."""
             # Set the variable value
@@ -284,6 +278,10 @@ class IPOPT(NLPsolver):
                     # Single variable case
                     jacobian_matrix = jacobian_tuple
                 return jacobian_matrix.detach().numpy()
+    """
+    tensor([[ 0.0000,  1.0000, -1.7641, -0.4002],
+            [ 1.0000, -1.0000,  0.0000,  0.0000]]
+    """
 
     class Bounds():
         def __init__(self, problem):

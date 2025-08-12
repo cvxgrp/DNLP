@@ -5,16 +5,14 @@ import cvxpy as cp
 
 # Generate random data
 np.random.seed(0)
-m, n = 10, 50
+m, n = 1, 2
 A = np.random.randn(m, n)
 b = np.random.randn(m)
 # Define the variable
 x = cp.Variable(n)
-t = cp.Variable(m)
-t.value = np.ones(m)
 # set initial value for x
-objective = cp.Minimize(-cp.sum(cp.log(t)))
-problem = cp.Problem(objective, [t == A @ x - b])
+objective = cp.Minimize(-cp.sum(cp.log(A @ x - b)))
+problem = cp.Problem(objective, [])
 # Solve the problem
 problem.solve(solver=cp.IPOPT, nlp=True)
 print("Optimal value:", problem.value)
