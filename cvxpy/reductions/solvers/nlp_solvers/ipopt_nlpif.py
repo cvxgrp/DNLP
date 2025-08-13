@@ -16,7 +16,6 @@ limitations under the License.
 
 import numpy as np
 import scipy.sparse as sp
-import torch
 
 import cvxpy.settings as s
 from cvxpy.constraints import (
@@ -32,7 +31,6 @@ from cvxpy.reductions.utilities import (
     nonpos2nonneg,
 )
 from cvxpy.utilities.citations import CITATION_DICT
-from cvxtorch import TorchExpression
 
 
 class IPOPT(NLPsolver):
@@ -146,7 +144,7 @@ class IPOPT(NLPsolver):
         nlp = cyipopt.Problem(
         n=len(x0),
         m=len(bounds.cl),
-        problem_obj=self.Oracles(bounds.new_problem),
+        problem_obj=self.Oracles(bounds.new_problem, x0),
         lb=bounds.lb,
         ub=bounds.ub,
         cl=bounds.cl,
@@ -169,9 +167,10 @@ class IPOPT(NLPsolver):
         return CITATION_DICT["IPOPT"]
 
     class Oracles():
-        def __init__(self, problem):
+        def __init__(self, problem, inital_point):
             self.problem = problem
             self.main_var = []
+            self.initial_point = inital_point
             for var in self.problem.variables():
                 self.main_var.append(var)
         
@@ -201,7 +200,10 @@ class IPOPT(NLPsolver):
             for var in self.main_var:
                 size = var.size
                 if var in grad_dict:
-                    grad[grad_offset:grad_offset+size] = grad_dict[var]
+                    array = grad_dict[var]
+                    if sp.issparse(array):
+                        array = array.toarray().flatten(order='F')
+                    grad[grad_offset:grad_offset+size] = array
                 grad_offset += size
             return grad
 
@@ -231,15 +233,16 @@ class IPOPT(NLPsolver):
             
             values = []
             for constraint in self.problem.constraints:
+                # get the jacobian of the constraint
                 grad_dict = constraint.expr.grad
                 for var in self.main_var:
                     if var in grad_dict:
-                        array = grad_dict[var]
-                        if sp.issparse(array):
-                            array = array.toarray().flatten(order='F')
-                            values.append(np.atleast_1d(array))
+                        jacobian = grad_dict[var].T
+                        if sp.issparse(jacobian):
+                            jacobian = jacobian.toarray().flatten(order='F')
+                            values.append(np.atleast_1d(jacobian))
                         else:
-                            values.append(np.atleast_1d(array))
+                            values.append(np.atleast_1d(jacobian))
             return np.concatenate(values)
         
         def jacobianstructure(self):
@@ -247,7 +250,7 @@ class IPOPT(NLPsolver):
             # Set dummy values to get gradient structure
             offset = 0
             for var in self.main_var:
-                var.value = np.zeros(var.shape)
+                var.value = self.initial_point[offset:offset + var.size]
                 offset += var.size
             rows, cols = [], []
             row_offset = 0
@@ -256,12 +259,16 @@ class IPOPT(NLPsolver):
                 col_offset = 0
                 for var in self.main_var:
                     if var in grad_dict:
-                        array = grad_dict[var]
-                        if sp.issparse(array):
-                            array = array.toarray()
-                        # get row and column indices
-                        rows.extend(np.ones(array.size)*row_offset)
-                        cols.extend(np.arange(col_offset, col_offset + var.size))
+                        jacobian = grad_dict[var].T
+                        if sp.issparse(jacobian):
+                            row_indices, col_indices = np.indices(jacobian.shape)
+                            rows.extend(row_indices.flatten(order='F') + row_offset)
+                            cols.extend(col_indices.flatten(order='F') + col_offset)
+                        """
+                        else:
+                            rows.extend(np.ones(jacobian.size)*row_offset)
+                            cols.extend(np.arange(col_offset, col_offset + var.size))
+                        """
                     col_offset += var.size
                 row_offset += constraint.size
             
