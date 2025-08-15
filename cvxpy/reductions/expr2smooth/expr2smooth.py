@@ -108,9 +108,11 @@ class Expr2Smooth(Canonicalization):
 
         if type(expr) in self.smooth_canon_methods:
             return self.smooth_canon_methods[type(expr)](expr, args)
+        """
         elif hasattr(expr, "curvature") and expr.curvature == "AFFINE":
             if type(expr) is Variable:
                 return expr, []
             t = Variable(expr.shape)
             return t, [t == expr.copy(args)]
+        """
         return expr.copy(args), []

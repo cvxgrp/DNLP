@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from cvxpy.expressions.variable import Variable
+
+
 def log_canon(expr, args):
-    args[0].value = expr.point_in_domain()
-    new_expr = expr.copy(args)
-    return new_expr, []
+    t = Variable(args[0].size)
+    t.value = expr.point_in_domain()
+    return expr.copy([t]), [t==args[0]]

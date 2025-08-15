@@ -250,7 +250,10 @@ class IPOPT(NLPsolver):
             # Set dummy values to get gradient structure
             offset = 0
             for var in self.main_var:
-                var.value = self.initial_point[offset:offset + var.size]
+                if var.shape == ():
+                    var.value = self.initial_point[offset]
+                else:
+                    var.value = np.atleast_1d(self.initial_point[offset:offset + var.size])
                 offset += var.size
             rows, cols = [], []
             row_offset = 0
@@ -264,19 +267,13 @@ class IPOPT(NLPsolver):
                             row_indices, col_indices = np.indices(jacobian.shape)
                             rows.extend(row_indices.flatten(order='F') + row_offset)
                             cols.extend(col_indices.flatten(order='F') + col_offset)
-                        """
                         else:
                             rows.extend(np.ones(jacobian.size)*row_offset)
                             cols.extend(np.arange(col_offset, col_offset + var.size))
-                        """
                     col_offset += var.size
                 row_offset += constraint.size
             
             return (np.array(rows), np.array(cols))
-    """
-    tensor([[ 0.0000,  1.0000, -1.7641, -0.4002],
-            [ 1.0000, -1.0000,  0.0000,  0.0000]]
-    """
 
     class Bounds():
         def __init__(self, problem):
