@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from cvxpy.atoms.affine.binary_operators import multiply
 from cvxpy.expressions.variable import Variable
+
 
 # We canonicalize div(x, y) as z * y = x.
 def div_canon(expr, args):
@@ -33,4 +35,4 @@ def div_canon(expr, args):
     else:
         z.value = expr.point_in_domain()
     # TODO: should we also include y >= 0 here?
-    return z, [z * y == args[0], y == args[1]]#], #y >= 0, z >= 0]
+    return z, [multiply(z, y) == args[0], y == args[1]]#, y >= 0, z >= 0]

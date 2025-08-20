@@ -18,7 +18,7 @@ from cvxpy.expressions.variable import Variable
 
 
 def log_canon(expr, args):
-    t = Variable(args[0].size)
+    t = Variable(args[0].shape)
     if args[0].value is not None:
         t.value = args[0].value
     else:

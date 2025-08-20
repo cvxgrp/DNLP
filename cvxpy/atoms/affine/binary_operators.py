@@ -190,6 +190,9 @@ class MulExpression(BinaryOperator):
         X = values[0]
         Y = values[1]
         
+        if np.isscalar(X) or np.isscalar(Y):
+            return [sp.csc_matrix(Y), sp.csc_matrix(X)]
+
         # Get dimensions
         m, n = self.args[0].shape if len(self.args[0].shape) == 2 else (self.args[0].size, 1)
         n2, p = self.args[1].shape if len(self.args[1].shape) == 2 else (self.args[1].size, 1)
@@ -198,7 +201,7 @@ class MulExpression(BinaryOperator):
         assert n == n2, f"Inner dimensions must match for multiplication: {n} != {n2}"
         
         # Compute ∂vec(Z)/∂vec(X) = (Y.T ⊗ I_m).T
-        # This is a (m*n) × (m*p) matrix 
+        # This is a (m*n) × (m*p) matrix
         DX = sp.kron(Y.T, sp.eye(m, format='csc'), format='csc').T
         
         # Compute ∂vec(Z)/∂vec(Y) = (I_p ⊗ X).T

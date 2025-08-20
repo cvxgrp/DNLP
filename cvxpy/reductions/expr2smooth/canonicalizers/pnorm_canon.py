@@ -19,8 +19,7 @@ from cvxpy.expressions.variable import Variable
 
 def pnorm_canon(expr, args):
     x = args[0]
-    p = expr.p_rational
-    w = expr.w
+    p = expr.p
 
     if p == 1:
         return x, []
@@ -28,8 +27,7 @@ def pnorm_canon(expr, args):
     shape = expr.shape
     t = Variable(shape)
     if p % 2 == 0:
-        summation = [x[i]**p for i in range(len(x))]
+        summation = sum(x[i]**p for i in range(x.size))
         return t, [t**p == summation, t >= 0]
     else:
         z = Variable(shape)
-        
