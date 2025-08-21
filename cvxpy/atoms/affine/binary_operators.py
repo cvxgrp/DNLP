@@ -313,8 +313,8 @@ class multiply(MulExpression):
         x = values[0]
         y = values[1]
         # Flatten in case inputs are not 1D
-        x = np.asarray(x).flatten()
-        y = np.asarray(y).flatten()
+        x = np.asarray(x).flatten(order='F')
+        y = np.asarray(y).flatten(order='F')
         DX = sp.diags(y, format='csc')
         DY = sp.diags(x, format='csc')
         return [DX, DY]
