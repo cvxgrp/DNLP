@@ -154,8 +154,9 @@ class IPOPT(NLPsolver):
         nlp.add_option('mu_strategy', 'adaptive')
         nlp.add_option('tol', 1e-7)
         nlp.add_option('honor_original_bounds', 'yes')
+        #nlp.add_option('bound_relax_factor', 0.0)
         nlp.add_option('hessian_approximation', "limited-memory")
-        _, info = nlp.solve(x0)
+        _, info = nlp.solve(x0) 
         return info
 
     def cite(self, data):

@@ -40,11 +40,17 @@ def power_canon(expr, args):
                 t.value = np.power(np.abs(x.value), p)
             return t, [t**(1/p) == x, t >= 0]
         elif p > 1:
-            t = Variable(args[0].shape)
+
+            # DCED: hardcoded bound for now
+            assert(p == 2)
+            t = Variable(args[0].shape, bounds=[0, None])
+            #t = Variable(args[0].shape)
             if args[0].value is not None:
                 t.value = args[0].value
             else:
-                t.value = expr.point_in_domain()
+                #t.value = expr.point_in_domain()
+                # hardcoded for now
+                t.value = np.array([1]) * np.ones(t.shape)
             return expr.copy([t]), [t==args[0]]
         else:
             pass

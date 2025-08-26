@@ -15,11 +15,11 @@ limitations under the License.
 """
 
 from cvxpy.expressions.variable import Variable
-
+# TODO (DCED): add extra domain check in case value is set
 
 def log_canon(expr, args):
-    t = Variable(args[0].size)
-    if args[0].value is not None:
+    t = Variable(args[0].size, bounds=[0, None])
+    if args[0].value is not None and args[0].value > 0:
         t.value = args[0].value
     else:
         t.value = expr.point_in_domain()
