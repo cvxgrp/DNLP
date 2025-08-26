@@ -153,10 +153,11 @@ class IPOPT(NLPsolver):
         )
         nlp.add_option('mu_strategy', 'adaptive')
         nlp.add_option('tol', 1e-7)
-        nlp.add_option('honor_original_bounds', 'yes')
+        #nlp.add_option('honor_original_bounds', 'yes')
         #nlp.add_option('bound_relax_factor', 0.0)
         nlp.add_option('hessian_approximation', "limited-memory")
-        _, info = nlp.solve(x0) 
+        nlp.add_option('derivative_test', 'first-order')
+        _, info = nlp.solve(x0)
         return info
 
     def cite(self, data):
@@ -262,7 +263,7 @@ class IPOPT(NLPsolver):
                     #var.value = self.initial_point[offset]
                     var.value = np.nan
                 else:
-                    var.value = np.nan * np.ones(var.size)
+                    var.value = np.nan * np.ones(var.size).reshape(var.shape, order='F')
                     #var.value = np.atleast_1d(self.initial_point[offset:offset + var.size])
                 #offset += var.size
             rows, cols = [], []
