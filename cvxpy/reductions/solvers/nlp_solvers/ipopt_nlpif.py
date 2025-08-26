@@ -157,6 +157,7 @@ class IPOPT(NLPsolver):
         #nlp.add_option('bound_relax_factor', 0.0)
         nlp.add_option('hessian_approximation', "limited-memory")
         nlp.add_option('derivative_test', 'first-order')
+        #nlp.add_option('least_square_init_duals', 'yes')
         _, info = nlp.solve(x0)
         return info
 
@@ -223,7 +224,7 @@ class IPOPT(NLPsolver):
             # Evaluate all constraints
             constraint_values = []
             for constraint in self.problem.constraints:
-                constraint_values.append(np.asarray(constraint.args[0].value).flatten())
+                constraint_values.append(np.asarray(constraint.args[0].value).flatten(order='F'))
             return np.concatenate(constraint_values)
 
         def jacobian(self, x):

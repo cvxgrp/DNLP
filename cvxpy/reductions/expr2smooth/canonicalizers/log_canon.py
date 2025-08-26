@@ -15,12 +15,55 @@ limitations under the License.
 """
 
 from cvxpy.expressions.variable import Variable
-# TODO (DCED): add extra domain check in case value is set
+from cvxpy.expressions.constants import Constant
+import numpy as np
+
+def collect_constant_and_variable(expr, constants, variable):
+    if isinstance(expr, Constant):
+        constants.append(expr)
+    elif isinstance(expr, Variable):
+        variable.append(expr)
+    elif hasattr(expr, "args"):
+        for subexpr in expr.args:
+            collect_constant_and_variable(subexpr, constants, variable)
+
+    assert(len(variable) <= 1)
+
+LOWER_BOUND = 1e-5
 
 def log_canon(expr, args):
-    t = Variable(args[0].size, bounds=[0, None])
-    if args[0].value is not None and args[0].value > 0:
+    t = Variable(args[0].size, bounds=[LOWER_BOUND, None])
+
+    # DCED: if args[0] is a * x for a constant scalar or vector 'a' 
+    # and a vector variable 'x', we want to add bounds to x if x
+    # does not have any bounds. We also want to initialize x far 
+    # from its bounds. 
+    constants, variable = [], []
+    collect_constant_and_variable(args[0], constants, variable) 
+    a = 1
+    is_special_case = True
+    for constant in constants:
+        if len(constant.shape) == 2:
+            is_special_case = False
+            break
+        else:
+            a *= constant.value
+
+    if not is_special_case:
+        if args[0].value is not None and np.all(args[0].value > 0):
+            t.value = args[0].value
+        else:
+            t.value = expr.point_in_domain()
+    else:  
+        if variable[0].value is None:
+            variable[0].value = expr.point_in_domain() * np.sign(a)
+        
+        lbs = -np.inf * np.ones(args[0].size)
+        ubs = np.inf * np.ones(args[0].size)
+        lbs[a > 0] = 0
+        ubs[a < 0] = 0
+        variable[0].bounds = [lbs, ubs]        
+        assert(args[0].value is not None and np.all(args[0].value > 0.0))
         t.value = args[0].value
-    else:
-        t.value = expr.point_in_domain()
+
     return expr.copy([t]), [t==args[0]]
