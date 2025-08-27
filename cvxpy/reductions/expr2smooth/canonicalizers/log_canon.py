@@ -29,10 +29,12 @@ def collect_constant_and_variable(expr, constants, variable):
 
     assert(len(variable) <= 1)
 
+# DCED: Without this lower bound the stress test for ML Gaussian non-zero mean fails.
+# Perhaps this should be a parameter exposed to the user?
 LOWER_BOUND = 1e-5
 
 def log_canon(expr, args):
-    t = Variable(args[0].size, bounds=[LOWER_BOUND, None])
+    t = Variable(args[0].size, bounds=[LOWER_BOUND, None], name='t')
 
     # DCED: if args[0] is a * x for a constant scalar or vector 'a' 
     # and a vector variable 'x', we want to add bounds to x if x

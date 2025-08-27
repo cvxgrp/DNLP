@@ -41,9 +41,10 @@ def power_canon(expr, args):
             #    t.value = np.power(np.abs(x.value), p)
             #return t, [t**(1/p) == x, t >= 0]
         elif p > 1:
+            # TODO (DCED): clean this up. I misinterpreted this.
             even = p % 2 == 0
             if even:
-                t = Variable(args[0].shape, bounds=[0, None])
+                t = Variable(args[0].shape)#, bounds=[0, None])
                 #t = Variable(args[0].shape)
             else:
                 t = Variable(args[0].shape)
