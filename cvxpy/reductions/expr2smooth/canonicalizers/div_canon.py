@@ -31,13 +31,14 @@ def div_canon(expr, args):
     
     y = Variable(args[1].shape, bounds=[0, None])
 
+    # DCED: perhaps initialize further away from boundary?
     if args[1].value is not None and np.all(args[1].value != 0.0):
         y.value = args[1].value
     else:
         y.value = expr.point_in_domain()
 
     if args[0].value is not None:
-        z.value = args[0].value / y.value 
+        z.value = np.atleast_1d(args[0].value) / y.value 
     else:
         z.value = expr.point_in_domain()
     return z, [z * y == args[0], y == args[1]]
