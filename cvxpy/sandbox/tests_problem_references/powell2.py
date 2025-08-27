@@ -1,9 +1,8 @@
+import pdb
+
 import numpy as np
-import pandas as pd
-import pdb 
 
 import cvxpy as cp
-
 
 x = cp.Variable(2, name='x')
 F = cp.hstack([1e4*x[0]*x[1] - 1,

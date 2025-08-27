@@ -1,9 +1,6 @@
 import numpy as np
-import pandas as pd
-import pdb 
 
 import cvxpy as cp
-
 
 x = cp.Variable(4, name='x')
 F = cp.hstack([x[0] + 10 * x[1],

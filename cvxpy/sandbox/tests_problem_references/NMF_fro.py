@@ -1,6 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
+
 import cvxpy as cp
+
 np.random.seed(0)
 
 n, m, k = 5, 4, 2
