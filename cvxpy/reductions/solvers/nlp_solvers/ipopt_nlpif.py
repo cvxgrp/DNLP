@@ -16,7 +16,6 @@ limitations under the License.
 
 import numpy as np
 import scipy.sparse as sp
-from time import time
 
 import cvxpy.settings as s
 from cvxpy.constraints import (
@@ -179,7 +178,6 @@ class IPOPT(NLPsolver):
         
         def objective(self, x):
             """Returns the scalar value of the objective given x."""
-            # Set the variable value
             offset = 0
             for var in self.main_var:
                 size = var.size
@@ -191,7 +189,6 @@ class IPOPT(NLPsolver):
         
         def gradient(self, x):
             """Returns the gradient of the objective with respect to x."""
-            # compute the gradient using _grad
             offset = 0
             for var in self.main_var:
                 size = var.size
@@ -212,13 +209,11 @@ class IPOPT(NLPsolver):
 
         def constraints(self, x):
             """Returns the constraint values."""
-            # Set the variable value
             offset = 0
             for var in self.main_var:
                 size = var.size
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
-            
             # Evaluate all constraints
             constraint_values = []
             for constraint in self.problem.constraints:
@@ -227,14 +222,11 @@ class IPOPT(NLPsolver):
 
         def jacobian(self, x):
             """Returns only the non-zero values of the Jacobian."""
-            
-            # Set variable values
             offset = 0
             for var in self.main_var:
                 size = var.size
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
-            
             values = []
             for constraint in self.problem.constraints:
                 # get the jacobian of the constraint
@@ -245,7 +237,10 @@ class IPOPT(NLPsolver):
                         jacobian = grad_dict[var].T
                         if sp.issparse(jacobian):
                             jacobian = sp.dok_matrix(jacobian)
-                            data = np.array([jacobian.get((r, c), 0) for r, c in zip(rows, cols)])        
+                            data = np.array([
+                                jacobian.get((r, c), 0)
+                                for r, c in zip(rows, cols)
+                            ])
                             values.append(np.atleast_1d(data))
                         else:
                             values.append(np.atleast_1d(jacobian))
@@ -287,8 +282,26 @@ class IPOPT(NLPsolver):
                     col_offset += var.size
                 row_offset += constraint.size
                 self.jacobian_idxs[constraint] = constraint_jac
-
             return (np.array(rows), np.array(cols))
+
+        def hessian(self, x, duals, obj_factor):
+            offset = 0
+            for var in self.main_var:
+                size = var.size
+                var.value = x[offset:offset+size].reshape(var.shape, order='F')
+                offset += size
+            hess = np.zeros((x.size, x.size), dtype=np.float64)
+            hess_dict = self.problem.objective.expr.hess(obj_factor)
+            # if we specify the problem in graph form, then the objective
+            # hessian will always be zero
+            hess_row_offset = 0
+            for constraint in self.problem.constraints:
+                pass
+            return hess
+
+        def hessianstructure(self):
+            pass
+
 
     class Bounds():
         def __init__(self, problem):
