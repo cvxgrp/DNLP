@@ -596,16 +596,9 @@ class Leaf(expression.Expression):
                     # necessary for NLP package extension and computing the structural jacobian
                     return val
                 else:
-                    # TODO: right now the derivative checker might not respect the bounds 
-                    #       of the variable. Must fix that, since otherwise we might end 
-                    #       up outside the domain of a function when we evaluate
-                    #       the constraints/objective. Extremely weird that the derivative 
-                    #       checker ends up evaluating a point outside the domain
-                    assert(False)
-                    pass
-                    #raise ValueError(
-                    #   "%s value must be %s." % (self.__class__.__name__, attr_str)
-                    #)
+                    raise ValueError(
+                       "%s value must be %s." % (self.__class__.__name__, attr_str)
+                    )
         return val
 
     def is_psd(self) -> bool:
