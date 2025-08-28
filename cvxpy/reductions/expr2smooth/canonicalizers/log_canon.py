@@ -16,6 +16,7 @@ limitations under the License.
 
 from cvxpy.expressions.variable import Variable
 from cvxpy.expressions.constants import Constant
+from cvxpy.atoms import exp, log
 import numpy as np
 
 def collect_constant_and_variable(expr, constants, variable):
@@ -34,7 +35,7 @@ def collect_constant_and_variable(expr, constants, variable):
 LOWER_BOUND = 1e-5
 
 def log_canon(expr, args):
-    t = Variable(args[0].size, bounds=[LOWER_BOUND, None], name='t')
+    t = Variable(args[0].size, bounds=[LOWER_BOUND, None])
 
     # DCED: if args[0] is a * x for a constant scalar or vector 'a' 
     # and a vector variable 'x', we want to add bounds to x if x
@@ -69,3 +70,15 @@ def log_canon(expr, args):
         t.value = args[0].value
 
     return expr.copy([t]), [t==args[0]]
+
+# TODO (DCED): On some problems this canonicalization seems to work better.
+#              We should investigate this further when we have more benchmarks
+#              involving log.
+#def log_canon(expr, args):
+#    t = Variable(args[0].size)
+#    if args[0].value is not None and np.all(args[0].value > 0):
+#        t.value = np.log(args[0].value)
+#    else:
+#        t.value = expr.point_in_domain()
+#
+#    return t, [exp(t) == args[0]]
