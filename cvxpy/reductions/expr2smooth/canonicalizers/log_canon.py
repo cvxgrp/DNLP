@@ -16,6 +16,7 @@ limitations under the License.
 
 from cvxpy.expressions.variable import Variable
 from cvxpy.expressions.constants import Constant
+import numpy as np
 
 def collect_constant_and_variable(expr, constants, variable):
     if isinstance(expr, Constant):
