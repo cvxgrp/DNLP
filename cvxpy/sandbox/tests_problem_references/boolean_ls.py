@@ -1,6 +1,8 @@
-import numpy as np 
-import cvxpy as cp 
 import pdb
+
+import numpy as np
+
+import cvxpy as cp
 
 n, m = 100, 25
 A = np.random.randn(m, n)

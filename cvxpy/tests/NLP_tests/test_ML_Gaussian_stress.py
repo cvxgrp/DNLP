@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.linalg as LA
-import pandas as pd
+
 import cvxpy as cp
 
 
@@ -100,5 +100,3 @@ class TestStressMLE():
                     print("sigma_opt: ", sigma_opt)
                     assert(np.abs(sigma.value - sigma_opt) / np.max([1, np.abs(sigma_opt)]) <= TOL)
                     assert(np.abs(mu.value - mu_opt) / np.max([1, np.abs(mu_opt)]) <= TOL)
-
-                

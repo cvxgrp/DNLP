@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+
 import cvxpy as cp
 
 x = cp.Variable(2, name='x')

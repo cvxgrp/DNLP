@@ -1,6 +1,6 @@
-import numpy as np 
-import cvxpy as cp 
-import pdb
+import numpy as np
+
+import cvxpy as cp
 
 m = 100
 n = 5

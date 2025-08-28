@@ -16,7 +16,6 @@ limitations under the License.
 
 import numpy as np
 import scipy.sparse as sp
-from time import time
 
 import cvxpy.settings as s
 from cvxpy.constraints import (
@@ -285,7 +284,10 @@ class IPOPT(NLPsolver):
                         jacobian = grad_dict[var].T
                         if sp.issparse(jacobian):
                             jacobian = sp.dok_matrix(jacobian)
-                            data = np.array([jacobian.get((r, c), 0) for r, c in zip(rows, cols)])        
+                            data = np.array([
+                                jacobian.get((r, c), 0)
+                                for r, c in zip(rows, cols)
+                            ])
                             values.append(np.atleast_1d(data))
                         else:
                             values.append(np.atleast_1d(jacobian))

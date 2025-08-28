@@ -1,6 +1,7 @@
 import numpy as np
+
 import cvxpy as cp
-import pdb
+
 np.random.seed(0)
 
 # Problem dimensions
