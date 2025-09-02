@@ -101,8 +101,7 @@ class Expr2Smooth(Canonicalization):
         A tuple of the canonicalized expression and generated constraints.
         """
         # Constant trees are collapsed, but parameter trees are preserved.
-        if isinstance(expr, Expression) and (
-                expr.is_constant() and not expr.parameters()):
+        if isinstance(expr, Expression) and expr.is_constant():
             return expr, []
 
         if type(expr) in self.smooth_canon_methods:

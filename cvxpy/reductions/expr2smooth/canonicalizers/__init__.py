@@ -19,7 +19,8 @@ from cvxpy.atoms.elementwise.minimum import minimum
 from cvxpy.atoms.elementwise.power import power
 from cvxpy.atoms.pnorm import Pnorm
 from cvxpy.atoms.elementwise.abs import abs
-from cvxpy.atoms.affine.binary_operators import DivExpression
+from cvxpy.atoms.affine.binary_operators import DivExpression, multiply
+from cvxpy.reductions.expr2smooth.canonicalizers.mul_canon import mul_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.div_canon import div_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.log_canon import log_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.minimum_canon import minimum_canon
@@ -35,5 +36,6 @@ CANON_METHODS = {
     log: log_canon,
     power: power_canon,
     Pnorm : pnorm_canon,
-    DivExpression: div_canon
+    DivExpression: div_canon,
+    multiply: mul_canon
 }
