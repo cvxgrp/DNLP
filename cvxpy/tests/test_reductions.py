@@ -73,9 +73,9 @@ class TestSmithFormCanonicalization():
         We consider the following expression:
         \frac{x + 2*y + z}{x + y}
         """
-        x = cp.Variable(name='x')
-        y = cp.Variable(name='y')
-        z = cp.Variable(name='z')
+        x = cp.Variable((1,), name='x')
+        y = cp.Variable((1,), name='y')
+        z = cp.Variable((1,), name='z')
 
         obj = (x + 2*y + z) / (x + y)
         problem = cp.Problem(cp.Minimize(obj), [])
@@ -88,11 +88,10 @@ class TestSmithFormCanonicalization():
             w2 = x + y
             w3 = w1/w2
         """
-        assert str(new_prob.objective) == "minimize var3"
-        assert len(new_prob.constraints) == 3
-        assert str(new_prob.constraints[0]) == "var1 == x + 2.0 @ y + z"
-        assert str(new_prob.constraints[1]) == "var2 == x + y"
-        assert str(new_prob.constraints[2]) == "var3 == var1 / var2"
+        assert str(new_prob.objective) == "minimize var11"
+        assert len(new_prob.constraints) == 2
+        assert str(new_prob.constraints[0]) == "var11 @ var12 == x + 2.0 @ y + z"
+        assert str(new_prob.constraints[1]) == "var12 == x + y"
 
     def test_example_mul(self):
         """
