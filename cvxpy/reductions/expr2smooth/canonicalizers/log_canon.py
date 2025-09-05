@@ -17,6 +17,7 @@ limitations under the License.
 from cvxpy.expressions.variable import Variable
 from cvxpy.expressions.constants import Constant
 import numpy as np
+from cvxpy.atoms.elementwise.exp import exp
 
 def collect_constant_and_variable(expr, constants, variable):
     if isinstance(expr, Constant):
@@ -79,5 +80,5 @@ def log_canon(expr, args):
 #        t.value = np.log(args[0].value)
 #    else:
 #        t.value = expr.point_in_domain()
-#
+
 #    return t, [exp(t) == args[0]]
