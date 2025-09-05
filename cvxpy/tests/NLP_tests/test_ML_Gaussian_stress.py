@@ -4,7 +4,6 @@ import cvxpy as cp
 
 # TODO (DCED): should try eg. student-t regression
 
-
 class TestStressMLE():
     
     def test_zero_mean(self):

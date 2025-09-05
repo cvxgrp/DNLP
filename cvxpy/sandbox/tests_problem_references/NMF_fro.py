@@ -19,4 +19,3 @@ Y = cp.Variable((k, m), bounds=[1, None], name='Y')
 obj = cp.sum(cp.square(A_noisy - X @ Y))
 problem = cp.Problem(cp.Minimize(obj))
 problem.solve(solver=cp.IPOPT, nlp=True, verbose=True)
-

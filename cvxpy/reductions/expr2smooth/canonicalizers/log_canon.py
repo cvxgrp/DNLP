@@ -14,10 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import numpy as np
+
+from cvxpy.expressions.constants import Constant
 from cvxpy.expressions.variable import Variable
 from cvxpy.expressions.constants import Constant
 import numpy as np
 from cvxpy.atoms.elementwise.exp import exp
+
+def collect_constant_and_variable(expr, constants, variable):
+    if isinstance(expr, Constant):
+        constants.append(expr)
+    elif isinstance(expr, Variable):
+        variable.append(expr)
+    elif hasattr(expr, "args"):
+        for subexpr in expr.args:
+            collect_constant_and_variable(subexpr, constants, variable)
+
+    assert(len(variable) <= 1)
+
+# DCED: Without this lower bound the stress test for ML Gaussian non-zero mean fails.
+# Perhaps this should be a parameter exposed to the user?
+LOWER_BOUND = 1e-5
 
 def collect_constant_and_variable(expr, constants, variable):
     if isinstance(expr, Constant):
