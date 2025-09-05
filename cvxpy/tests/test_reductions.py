@@ -116,3 +116,10 @@ class TestSmithFormCanonicalization():
         assert len(new_prob.constraints) == 2
         assert str(new_prob.constraints[0]) == "var8 == 2.0 @ y + z"
         assert str(new_prob.constraints[1]) == "var9 == x @ var8"
+
+        # testing grad doesn't go in chain rule
+        # for this particular problem
+        from cvxpy.reductions.solvers.nlp_solvers.ipopt_nlpif import IPOPT
+        import numpy as np
+        solver = IPOPT(new_prob)
+        solver.Oracles(new_prob, np.array([0.1,0.1,0.1,0.1,0.1])).jacobianstructure()
