@@ -17,7 +17,10 @@ limitations under the License.
 from typing import Tuple
 
 from cvxpy import problems
+from cvxpy.atoms.affine.affine_atom import AffAtom
+from cvxpy.constraints.constraint import Constraint
 from cvxpy.expressions.expression import Expression
+from cvxpy.expressions.variable import Variable
 from cvxpy.problems.objective import Minimize
 from cvxpy.reductions.canonicalization import Canonicalization
 from cvxpy.reductions.expr2smooth.canonicalizers import CANON_METHODS as smooth_canon_methods
@@ -101,12 +104,18 @@ class Expr2Smooth(Canonicalization):
         A tuple of the canonicalized expression and generated constraints.
         """
         # Constant trees are collapsed, but parameter trees are preserved.
-        if isinstance(expr, Expression) and (
-                expr.is_constant() and not expr.parameters()):
+        if isinstance(expr, Expression) and expr.is_constant():
             return expr, []
-
+        if isinstance(expr, Variable):
+            return expr, []
         if type(expr) in self.smooth_canon_methods:
             return self.smooth_canon_methods[type(expr)](expr, args)
+        elif isinstance(expr, AffAtom):
+            return expr.copy(args), []
+        elif type(expr) is not Minimize and not isinstance(expr, Constraint):
+            raise ValueError("The NLP extension doesn't yet support canonicalization of",
+                             f"type {type(expr)}"
+                             )
         """
         elif hasattr(expr, "curvature") and not expr.curvature == "AFFINE":
             t = Variable(expr.shape)
