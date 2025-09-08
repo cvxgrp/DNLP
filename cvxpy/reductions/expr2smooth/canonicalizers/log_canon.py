@@ -33,6 +33,7 @@ def collect_constant_and_variable(expr, constants, variable):
 # DCED: Without this lower bound the stress test for ML Gaussian non-zero mean fails.
 # Perhaps this should be a parameter exposed to the user?
 LOWER_BOUND = 1e-5
+#LOWER_BOUND = 0
 
 def log_canon(expr, args):
     t = Variable(args[0].size, bounds=[LOWER_BOUND, None])

@@ -132,6 +132,7 @@ class IPOPT(NLPsolver):
             (status, optimal value, primal, equality dual, inequality dual)
         """
         import cyipopt
+
         bounds = self.Bounds(data["problem"])
         x0 = self.construct_initial_point(bounds)
         nlp = cyipopt.Problem(
@@ -148,11 +149,22 @@ class IPOPT(NLPsolver):
         #nlp.add_option('honor_original_bounds', 'yes')
         nlp.add_option('bound_relax_factor', 0.0)
         nlp.add_option('hessian_approximation', "limited-memory")
-        nlp.add_option('derivative_test', 'first-order')
+        #nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('least_square_init_duals', 'yes')
+        #nlp.add_option('nlp_scaling_method', 'gradient-based')
         #nlp.add_option('constr_mult_init_max', 1e10) 
         #nlp.add_option('derivative_test_perturbation', 1e-5)
         #nlp.add_option('point_perturbation_radius', 0.1)
+        #x0 = 0.1 * np.ones(len(x0))
+        #x0[0:-3] = 0.1 * np.ones(len(x0)-3) 
+        #lst_of_indices = [-3, -2, -1, -7984]     
+        # don't change indices in lst_of_indices
+        # Create a mask of all entries
+        #mask = np.ones(len(x0), dtype=bool)
+        #mask[lst_of_indices] = False  # exclude given indices
+        # Set only the others to 0.1
+        #x0[mask] = 0.1
+
         _, info = nlp.solve(x0)
         return info
 
@@ -174,6 +186,7 @@ class IPOPT(NLPsolver):
             ubs = bounds.ub
             for var in bounds.main_var:
                 if var.value is not None:
+                    # TODO: must make sure that this value is within the bounds
                     initial_values.append(var.value.flatten(order='F'))
                 else:
                     # If no initial value is specified, look at the bounds.
