@@ -153,6 +153,9 @@ class IPOPT(NLPsolver):
         #nlp.add_option('constr_mult_init_max', 1e10) 
         #nlp.add_option('derivative_test_perturbation', 1e-5)
         #nlp.add_option('point_perturbation_radius', 0.1)
+        #x0 = np.maximum(x0, 10)
+        #import pdb 
+        #pdb.set_trace()
         _, info = nlp.solve(x0)
         return info
 
@@ -360,6 +363,20 @@ class IPOPT(NLPsolver):
         def hessianstructure(self):
             pass
         """
+
+        def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,
+                     d_norm, regularization_size, alpha_du, alpha_pr,
+                     ls_trials):
+            """Prints information at every Ipopt iteration."""
+            iterate = self.get_current_iterate()
+            infeas = self.get_current_violations()
+            primal = iterate["x"]
+            jac = self.jacobian(primal)
+
+            #print("Iteration:", iter_count)
+            print("Primal iterate:", primal)
+            #print("Flattened Jacobian:", jac)
+            #print("Dual infeasibility:", infeas["grad_lag_x"])
 
     class Bounds():
         def __init__(self, problem):

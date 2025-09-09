@@ -43,4 +43,6 @@ def div_canon(expr, args):
         z.value = np.atleast_1d(args[0].value) / y.value 
     else:
         z.value = expr.point_in_domain()
+    
+    # TODO: maybe we should use multiply here instead of *?
     return z, [z * y == args[0], y == args[1]]

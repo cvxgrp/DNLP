@@ -24,7 +24,7 @@ class TestStressMLE():
     # nonconvex problem, compute minimum entropy distribution
     # over simplex (the analytical solution is any of the vertices)
     def test_entropy_two(self):
-        np.random.seed(0)
+        np.random.seed(1)
         n = 10
         q = cp.Variable((n, ), nonneg=True)
         q.value = np.random.rand(n)
@@ -34,6 +34,7 @@ class TestStressMLE():
         problem = cp.Problem(cp.Minimize(obj), constraints)
         problem.solve(solver=cp.IPOPT, nlp=True, verbose=True)
         q_opt_nlp = q.value 
+        print("q_opt_nlp: ", q_opt_nlp)
         assert(np.sum(q_opt_nlp > 1e-8) == 1)
 
     # convex formulation, relative entropy f(x, y) = x log (x / y)
