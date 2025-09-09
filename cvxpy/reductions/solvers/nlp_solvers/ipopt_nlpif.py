@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import cyipopt
 import numpy as np
 import scipy.sparse as sp
 
@@ -147,8 +148,8 @@ class IPOPT(NLPsolver):
         nlp.add_option('tol', 1e-7)
         #nlp.add_option('honor_original_bounds', 'yes')
         nlp.add_option('bound_relax_factor', 0.0)
-        nlp.add_option('hessian_approximation', "limited-memory")
-        nlp.add_option('derivative_test', 'first-order')
+        nlp.add_option('hessian_approximation', "exact")
+        nlp.add_option('derivative_test', 'second-order')
         nlp.add_option('least_square_init_duals', 'yes')
         #nlp.add_option('constr_mult_init_max', 1e10) 
         #nlp.add_option('derivative_test_perturbation', 1e-5)
@@ -203,7 +204,7 @@ class IPOPT(NLPsolver):
             x0 = np.concatenate(initial_values, axis=0)
             return x0
 
-    class Oracles():
+    class Oracles(cyipopt.Problem):
         def __init__(self, problem, inital_point):
             self.problem = problem
             self.main_var = []
@@ -223,8 +224,6 @@ class IPOPT(NLPsolver):
             return obj_value
         
         def gradient(self, x):
-            #import pdb 
-            #pdb.set_trace()
             """Returns the gradient of the objective with respect to x."""
             offset = 0
             for var in self.main_var:
@@ -324,14 +323,39 @@ class IPOPT(NLPsolver):
                 self.jacobian_idxs[constraint] = constraint_jac
             return (np.array(rows), np.array(cols))
 
+        def hessianstructure(self):
+            return np.nonzero(np.tril(np.ones((self.initial_point.size, self.initial_point.size))))
+           
         """
+        def hessian(self, x, lagrange, obj_factor):
+           #returns the non-zero values of the Hessian.
+            print("computing hessian")
+            H = obj_factor*np.array((
+                (2*x[3], 0, 0, 0),
+                (x[3],   0, 0, 0),
+                (x[3],   0, 0, 0),
+                (2*x[0]+x[1]+x[2], x[0], x[0], 0)))
+
+            H += lagrange[0]*np.array((
+                (0, 0, 0, 0),
+                (x[2]*x[3], 0, 0, 0),
+                (x[1]*x[3], x[0]*x[3], 0, 0),
+                (x[1]*x[2], x[0]*x[2], x[0]*x[1], 0)))
+
+            H += lagrange[1]*2*np.eye(4)
+
+            row, col = self.hessianstructure()
+
+            return H[row, col]
+        """
+
         def hessian(self, x, duals, obj_factor):
             offset = 0
             for var in self.main_var:
                 size = var.size
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
-            hess = np.zeros((x.size, x.size), dtype=np.float64)
+            hess_lagrangian = np.zeros((x.size, x.size), dtype=np.float64)
             # hess_dict = self.problem.objective.expr.hess(obj_factor)
             # if we specify the problem in graph form (i.e. t=obj),
             # the objective hessian will always be zero.
@@ -340,8 +364,11 @@ class IPOPT(NLPsolver):
             # This is done by looping through each constraint and each
             # pair of variables and summing up the hessian contributions.
             constr_offset = 0
+            print("checkpoint 1")
             for constraint in self.problem.constraints:
-                constr_hess = constraint.expr.hess()
+                print("checkpoint 2")
+                hess_dict = constraint.expr.hess
+                print("checkpoint 3")
                 # we have to make sure that the dual variables correspond
                 # to the constraints in the same order
                 constr_dual = duals[constr_offset:constr_offset + constraint.size]
@@ -349,17 +376,22 @@ class IPOPT(NLPsolver):
                 for var1 in self.main_var:
                     col_offset = 0
                     for var2 in self.main_var:
-                        hess[var1.index * row_offset, var2.index * col_offset] += (
-                            constr_dual * constr_hess.get((var1, var2), 0).toarray()
-                        )
+                        if (var1, var2) in hess_dict:
+                            var_hess = hess_dict[(var1, var2)]
+                            if sp.issparse(var_hess):
+                                var_hess = var_hess.toarray()
+                            
+                            r1, r2 = var1.size, var2.size
+                            # insert the block in the correct location
+                            hess_lagrangian[row_offset:row_offset+r1,
+                                            col_offset:col_offset+r2] += constr_dual * var_hess
                         col_offset += var2.size
                     row_offset += var1.size
                 constr_offset += constraint.size
-            return hess
-
-        def hessianstructure(self):
-            pass
-        """
+            
+            #print("hess: ", hess)
+            return hess_lagrangian    
+        
 
     class Bounds():
         def __init__(self, problem):
