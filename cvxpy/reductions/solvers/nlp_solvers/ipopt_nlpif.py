@@ -209,6 +209,7 @@ class IPOPT(NLPsolver):
             self.problem = problem
             self.main_var = []
             self.initial_point = inital_point
+            self.iterations = 0
             for var in self.problem.variables():
                 self.main_var.append(var)
 
@@ -325,29 +326,6 @@ class IPOPT(NLPsolver):
 
         def hessianstructure(self):
             return np.nonzero(np.tril(np.ones((self.initial_point.size, self.initial_point.size))))
-           
-        """
-        def hessian(self, x, lagrange, obj_factor):
-           #returns the non-zero values of the Hessian.
-            print("computing hessian")
-            H = obj_factor*np.array((
-                (2*x[3], 0, 0, 0),
-                (x[3],   0, 0, 0),
-                (x[3],   0, 0, 0),
-                (2*x[0]+x[1]+x[2], x[0], x[0], 0)))
-
-            H += lagrange[0]*np.array((
-                (0, 0, 0, 0),
-                (x[2]*x[3], 0, 0, 0),
-                (x[1]*x[3], x[0]*x[3], 0, 0),
-                (x[1]*x[2], x[0]*x[2], x[0]*x[1], 0)))
-
-            H += lagrange[1]*2*np.eye(4)
-
-            row, col = self.hessianstructure()
-
-            return H[row, col]
-        """
 
         def hessian(self, x, duals, obj_factor):
             offset = 0
@@ -356,6 +334,22 @@ class IPOPT(NLPsolver):
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
             hess_lagrangian = np.zeros((x.size, x.size), dtype=np.float64)
+            # compute the hessian of the objective
+            hess_dict = self.problem.objective.expr.hess
+            row_offset = 0
+            for var1 in self.main_var:
+                col_offset = 0
+                for var2 in self.main_var:
+                    if (var1, var2) in hess_dict:
+                        var_hess = hess_dict[(var1, var2)]
+                        if sp.issparse(var_hess):
+                            var_hess = var_hess.toarray()
+                        r1, r2 = var1.size, var2.size
+                        # insert the block in the correct location
+                        hess_lagrangian[row_offset:row_offset+r1,
+                                        col_offset:col_offset+r2] += obj_factor * var_hess
+                    col_offset += var2.size
+                row_offset += var1.size
             # hess_dict = self.problem.objective.expr.hess(obj_factor)
             # if we specify the problem in graph form (i.e. t=obj),
             # the objective hessian will always be zero.
@@ -364,11 +358,8 @@ class IPOPT(NLPsolver):
             # This is done by looping through each constraint and each
             # pair of variables and summing up the hessian contributions.
             constr_offset = 0
-            #print("checkpoint 1")
             for constraint in self.problem.constraints:
-                #print("checkpoint 2")
                 hess_dict = constraint.expr.hess
-                #print("checkpoint 3")
                 # we have to make sure that the dual variables correspond
                 # to the constraints in the same order
                 constr_dual = duals[constr_offset:constr_offset + constraint.size]
@@ -380,6 +371,9 @@ class IPOPT(NLPsolver):
                             var_hess = hess_dict[(var1, var2)]
                             if sp.issparse(var_hess):
                                 var_hess = var_hess.toarray()
+                            if var1.name() == "mu" and var2.name() == "mu":
+                                break
+                            var_hess = np.broadcast_to(var_hess, (var1.size, var2.size))
                             r1, r2 = var1.size, var2.size
                             # insert the block in the correct location
                             hess_lagrangian[row_offset:row_offset+r1,
@@ -391,6 +385,12 @@ class IPOPT(NLPsolver):
             row, col = self.hessianstructure()
             hess_lagrangian = hess_lagrangian[row, col]
             return hess_lagrangian
+        
+        def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,
+                        d_norm, regularization_size, alpha_du, alpha_pr,
+                        ls_trials):
+            """Prints information at every Ipopt iteration."""
+            self.iterations = iter_count
 
     class Bounds():
         def __init__(self, problem):

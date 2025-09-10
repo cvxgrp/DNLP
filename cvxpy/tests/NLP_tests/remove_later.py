@@ -13,13 +13,15 @@ scaling_factors = [0.1, 1e0, 10]
 for n in all_n:
     for factor in scaling_factors:
         data = factor*np.random.randn(n)
-        sigma_opt = (1 / np.sqrt(n)) * LA.norm(data)
+        sigma_opt = (1 / np.sqrt(n)) * LA.norm(data - np.mean(data))
         res = LA.norm(data) ** 2
         for method in METHODS:
             print("Method, n, scale factor: ", method, n, factor)
             if method == 1:
-                sigma = cp.Variable((1,))
-                obj = (n / 2) * cp.log(2*np.pi*cp.square(sigma)) + (1 / (2 * cp.square(sigma))) * res
+                mu = cp.Variable((1,), name="mu")
+                sigma = cp.Variable((1,), nonneg=True)
+                obj = (n / 2) * cp.log(2*np.pi*cp.square(sigma)) + \
+                      (1 / (2 * cp.square(sigma))) * cp.sum(cp.square(data-mu))
                 constraints = []
             """
             elif method == 2:

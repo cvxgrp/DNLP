@@ -21,6 +21,7 @@ from typing import List, Tuple
 import numpy as np
 import scipy.sparse as sp
 
+from cvxpy.expressions.constants.constant import Constant
 from cvxpy.expressions.variable import Variable
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
@@ -224,6 +225,10 @@ class MulExpression(BinaryOperator):
         if isinstance(self.args[0], Variable) or isinstance(self.args[1], Variable):
             return {(self.args[0], self.args[1]): 1.0, 
                     (self.args[1], self.args[0]): 1.0}
+        if isinstance(self.args[0], Constant) and isinstance(self.args[1], Variable):
+            return {(self.args[1], self.args[1]): self.args[0].value}
+        if isinstance(self.args[0], Variable) and isinstance(self.args[1], Constant):
+            return {(self.args[0], self.args[0]): self.args[1].value}
         x = values[0]
         y = values[1]
         # what is the hessian of elementwise multiplication?
@@ -359,6 +364,13 @@ class multiply(MulExpression):
         Returns:
             A list of SciPy CSC sparse matrices [D2X, D2Y].
         """
+        if isinstance(self.args[0], Variable) or isinstance(self.args[1], Variable):
+            return {(self.args[0], self.args[1]): 1.0, 
+                    (self.args[1], self.args[0]): 1.0}
+        if isinstance(self.args[0], Constant) and isinstance(self.args[1], Variable):
+            return {(self.args[1], self.args[1]): self.args[0].value}
+        if isinstance(self.args[0], Variable) and isinstance(self.args[1], Constant):
+            return {(self.args[0], self.args[0]): self.args[1].value}
         x = values[0]
         y = values[1]
         # what is the hessian of elementwise multiplication?

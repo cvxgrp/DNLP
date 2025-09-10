@@ -122,6 +122,10 @@ class Sum(AxisAtom, AffAtom):
                 obj = lu.mul_expr(ones, arg_objs[0], shape)
         return (obj, [])
 
+    def _hess(self, values):
+        """Returns the Hessian of the sum."""
+        var = self.args[0].variables()[0]
+        return {(var, var): self.args[0]._hess(values)[0].toarray()}
 
 @wraps(Sum)
 def sum(expr, axis: Optional[int] = None, keepdims: bool = False):
