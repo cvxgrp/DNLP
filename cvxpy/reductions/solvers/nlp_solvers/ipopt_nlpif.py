@@ -364,11 +364,11 @@ class IPOPT(NLPsolver):
             # This is done by looping through each constraint and each
             # pair of variables and summing up the hessian contributions.
             constr_offset = 0
-            print("checkpoint 1")
+            #print("checkpoint 1")
             for constraint in self.problem.constraints:
-                print("checkpoint 2")
+                #print("checkpoint 2")
                 hess_dict = constraint.expr.hess
-                print("checkpoint 3")
+                #print("checkpoint 3")
                 # we have to make sure that the dual variables correspond
                 # to the constraints in the same order
                 constr_dual = duals[constr_offset:constr_offset + constraint.size]
@@ -380,7 +380,6 @@ class IPOPT(NLPsolver):
                             var_hess = hess_dict[(var1, var2)]
                             if sp.issparse(var_hess):
                                 var_hess = var_hess.toarray()
-                            
                             r1, r2 = var1.size, var2.size
                             # insert the block in the correct location
                             hess_lagrangian[row_offset:row_offset+r1,
@@ -388,10 +387,10 @@ class IPOPT(NLPsolver):
                         col_offset += var2.size
                     row_offset += var1.size
                 constr_offset += constraint.size
-            
-            #print("hess: ", hess)
-            return hess_lagrangian    
-        
+            # return lower triangular part of the hessian
+            row, col = self.hessianstructure()
+            hess_lagrangian = hess_lagrangian[row, col]
+            return hess_lagrangian
 
     class Bounds():
         def __init__(self, problem):

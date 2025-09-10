@@ -18,9 +18,10 @@ for n in all_n:
         for method in METHODS:
             print("Method, n, scale factor: ", method, n, factor)
             if method == 1:
-                sigma = cp.Variable((1, ))
+                sigma = cp.Variable((1,))
                 obj = (n / 2) * cp.log(2*np.pi*cp.square(sigma)) + (1 / (2 * cp.square(sigma))) * res
                 constraints = []
+            """
             elif method == 2:
                 sigma2 = cp.Variable((1, ))
                 obj = (n / 2) * cp.log( 2 * np.pi * sigma2) + (1 / (2 * sigma2)) * res
@@ -39,16 +40,12 @@ for n in all_n:
                 sigma = cp.Variable((1, ))
                 obj = n  * cp.log(np.sqrt(2*np.pi)*sigma * -1 * -1 * 2 * 0.5) + (1 / (2 * cp.square(sigma))) * res
                 constraints = []
-
+            """
             problem = cp.Problem(cp.Minimize(obj), constraints)
             problem.solve(solver=cp.IPOPT, nlp=True)
-
-
-            reduction = Expr2Smooth(problem)
-            new_prob, inv_data = reduction.apply(problem)
-            print(str(new_prob))
-
-
+            #reduction = Expr2Smooth(problem)
+            #new_prob, inv_data = reduction.apply(problem)
+            #print(str(new_prob))
             print("sigma.value: ", sigma.value)
             print("sigma_opt: ", sigma_opt)
             assert(np.abs(sigma.value - sigma_opt) / np.max([1, np.abs(sigma_opt)]) <= TOL)
