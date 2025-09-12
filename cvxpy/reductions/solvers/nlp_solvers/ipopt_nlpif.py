@@ -150,6 +150,8 @@ class IPOPT(NLPsolver):
         nlp.add_option('bound_relax_factor', 0.0)
         nlp.add_option('hessian_approximation', "exact")
         nlp.add_option('derivative_test', 'second-order')
+        #nlp.add_option('hessian_approximation', "limited-memory")
+        #nlp.add_option('derivative_test', 'first-order')
         nlp.add_option('least_square_init_duals', 'yes')
         #nlp.add_option('constr_mult_init_max', 1e10) 
         #nlp.add_option('derivative_test_perturbation', 1e-5)

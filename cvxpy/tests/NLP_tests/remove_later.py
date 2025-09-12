@@ -1,9 +1,8 @@
-import numpy as np 
-import cvxpy as cp
+import numpy as np
 import numpy.linalg as LA
-from cvxpy.reductions.expr2smooth.expr2smooth import Expr2Smooth
 
-np.random.seed(1234)
+import cvxpy as cp
+
 TOL = 1e-3
 METHODS = [1]
 all_n = np.arange(2, 100, 5)
@@ -12,6 +11,7 @@ scaling_factors = [0.1, 1e0, 10]
 
 for n in all_n:
     for factor in scaling_factors:
+        np.random.seed(1235)
         data = factor*np.random.randn(n)
         sigma_opt = (1 / np.sqrt(n)) * LA.norm(data - np.mean(data))
         res = LA.norm(data) ** 2

@@ -106,6 +106,9 @@ class index(AffAtom):
         """
         obj = lu.index(arg_objs[0], shape, data[0])
         return (obj, [])
+    
+    def _hess(self, values):
+        return self.args[0].hess(values)
 
 
 class special_index(AffAtom):
