@@ -27,12 +27,14 @@ def multiply_canon(expr, args):
     if t1.is_constant() or t2.is_constant():
         return expr.copy([t1, t2]), []
 
-    if not t1.is_affine():
+    #if not t1.is_affine():
+    if not isinstance(t1, Variable):
         t1 = Variable(t1.shape)
         constraints += [t1 == args[0]]
         t1.value = args[0].value
 
-    if not t2.is_affine():
+    #if not t2.is_affine():
+    if not isinstance(t2, Variable):
         t2 = Variable(t2.shape)
         constraints += [t2 == args[1]]
         t2.value = args[1].value

@@ -225,6 +225,8 @@ class MulExpression(BinaryOperator):
         if isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable):
             return {(self.args[0], self.args[1]): np.eye(self.size), 
                     (self.args[1], self.args[0]): np.eye(self.size)}
+        if isinstance(self.args[0], Constant) and isinstance(self.args[1], Variable):
+            return self.args[1].hess
         x = values[0]
         y = values[1]
         # what is the hessian of elementwise multiplication?

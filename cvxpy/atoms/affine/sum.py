@@ -128,7 +128,7 @@ class Sum(AxisAtom, AffAtom):
         var = self.args[0].variables()[0]
         if isinstance(self.args[0], Variable):
             return {(var, var): np.zeros((self.args[0].size, self.args[0].size))}
-        return {(var, var): self.args[0]._hess(values)[0].toarray()}
+        return self.args[0].hess
 
 @wraps(Sum)
 def sum(expr, axis: Optional[int] = None, keepdims: bool = False):

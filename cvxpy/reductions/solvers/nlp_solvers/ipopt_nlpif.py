@@ -373,6 +373,8 @@ class IPOPT(NLPsolver):
                             var_hess = hess_dict[(var1, var2)]
                             if sp.issparse(var_hess):
                                 var_hess = var_hess.toarray()
+                            if np.allclose(var_hess, 0.0):
+                                break
                             if var1.name() == "mu" and var2.name() == "mu":
                                 break
                             var_hess = np.broadcast_to(var_hess, (var1.size, var2.size))
