@@ -1,10 +1,8 @@
-
-
-
 import numpy as np
 import numpy.linalg as LA
-import pandas as pd
+
 import cvxpy as cp
+
 np.random.seed(0)
 
 
