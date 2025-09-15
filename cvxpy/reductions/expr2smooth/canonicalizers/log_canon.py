@@ -80,10 +80,10 @@ def log_canon(expr, args):
 
     # DCED: introducing an out variable for log works MUCH worse for the 
     # Gaussian ML problem 
-    v = Variable(args[0].size)
+    #v = Variable(args[0].size)
     #v.value = np.ones(expr.shape)
-    v.value = np.log(t.value)
-    return v, [v == expr.copy([t]), t == args[0]]
+    #v.value = np.log(t.value)
+    #return v, [v == expr.copy([t]), t == args[0]]
 
     return expr.copy([t]), [t==args[0]]
 

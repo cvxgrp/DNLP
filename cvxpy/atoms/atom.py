@@ -442,12 +442,12 @@ class Atom(Expression):
     @property
     def hess(self):
         from cvxpy.atoms.elementwise.log import log
-
-        print("INSIDE HESS IN ATOM")
+        from cvxpy.atoms.elementwise.power import power
+        # print("INSIDE HESS IN ATOM")
         
         # Short-circuit to all zeros if known to be constant.
-        #if self.is_constant():
-        #    return u.grad.constant_grad(self)
+        if self.is_constant():
+            return u.grad.constant_grad(self)
 
         # Returns None if variable values not supplied.
         arg_values = []
@@ -459,6 +459,9 @@ class Atom(Expression):
 
         # A list of gradients w.r.t. arguments
         hess_self = self._hess(arg_values)
+        if isinstance(hess_self, dict):
+            # print("hess_self is a dict")
+            return hess_self
         # The Chain rule.
         result = {}
         for idx, arg in enumerate(self.args):
@@ -467,7 +470,7 @@ class Atom(Expression):
             hess_arg = arg.hess
             
             for key in hess_arg:
-                if isinstance(self, log):
+                if isinstance(self, (log, power)):
                     hess_arg[key] = 1.0
 
                 # None indicates gradient is not defined.
