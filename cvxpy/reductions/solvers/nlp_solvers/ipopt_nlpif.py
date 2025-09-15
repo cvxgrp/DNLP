@@ -164,7 +164,7 @@ class IPOPT(NLPsolver):
         if solver_opts:
             default_options.update(solver_opts)
         if not verbose:
-            default_options['print_level'] = 0
+            default_options['print_level'] = 3
         # Apply all options to the nlp object
         for option_name, option_value in default_options.items():
             nlp.add_option(option_name, option_value)
