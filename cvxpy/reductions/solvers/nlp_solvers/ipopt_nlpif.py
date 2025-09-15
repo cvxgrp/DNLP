@@ -145,19 +145,32 @@ class IPOPT(NLPsolver):
         cl=bounds.cl,
         cu=bounds.cu,
         )
-        # Set default IPOPT options
-        nlp.add_option('mu_strategy', 'adaptive')
-        nlp.add_option('tol', 1e-7)
+        # Set default IPOPT options, but use solver_opts if provided
+        default_options = {
+            'mu_strategy': 'adaptive',
+            'tol': 1e-7,
+            'bound_relax_factor': 0.0,
+            'hessian_approximation': 'limited-memory',
+            'derivative_test': 'first-order',
+            'least_square_init_duals': 'yes'
+        }
+        
         #nlp.add_option('honor_original_bounds', 'yes')
-        nlp.add_option('bound_relax_factor', 0.0)
-        nlp.add_option('hessian_approximation', "limited-memory")
-        nlp.add_option('derivative_test', 'first-order')
-        nlp.add_option('least_square_init_duals', 'yes')
         #nlp.add_option('constr_mult_init_max', 1e10) 
         #nlp.add_option('derivative_test_perturbation', 1e-5)
         #nlp.add_option('point_perturbation_radius', 0.1)
+
+        # Update defaults with user-provided options
+        if solver_opts:
+            default_options.update(solver_opts)
+        if not verbose:
+            default_options['print_level'] = 0
+        # Apply all options to the nlp object
+        for option_name, option_value in default_options.items():
+            nlp.add_option(option_name, option_value)
+
         _, info = nlp.solve(x0)
-        # add number of iterations to info dict from oracles intermediate callback
+        # add number of iterations to info dict from oracles
         info['iterations'] = oracles.iterations
         return info
 
