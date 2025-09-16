@@ -62,6 +62,28 @@ class TestHessVec():
         correct_matrix = -np.diag([ -5.0/(1.0**2), -4.0/(2.0**2), -3.0/(3.0**2)])
         assert(np.allclose(result_matrix, correct_matrix))
 
+    def test_multiply_with_constant_one_variable_test_one(self):
+        n = 3 
+        x = cp.Variable((n, ), name='x')
+        x.value = np.array([1.0, 2.0, 3.0])
+        vec = np.array([5.0, 4.0, 3.0])
+        scaled_log = 2.3 * cp.log(x)
+        result_dict = scaled_log.hess_vec(vec)
+        result_matrix = list(result_dict.values())[0]
+        correct_matrix = 2.3 * np.diag([ -5.0/(1.0**2), -4.0/(2.0**2), -3.0/(3.0**2)])
+        assert(np.allclose(result_matrix, correct_matrix))
+
+    def test_multiply_with_constant_one_variable_test_two(self):
+        n = 3 
+        x = cp.Variable((n, ), name='x')
+        x.value = np.array([1.0, 2.0, 3.0])
+        vec = np.array([5.0, 4.0, 3.0])
+        scaled_log = cp.log(x) * 2.3
+        result_dict = scaled_log.hess_vec(vec) 
+        result_matrix = list(result_dict.values())[0]
+        correct_matrix = 2.3 * np.diag([ -5.0/(1.0**2), -4.0/(2.0**2), -3.0/(3.0**2)])
+        assert(np.allclose(result_matrix, correct_matrix))
+
     def test_add_one_variable_two_logs(self):
         pass 
 

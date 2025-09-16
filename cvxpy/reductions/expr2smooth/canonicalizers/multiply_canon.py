@@ -18,6 +18,8 @@ limitations under the License.
 from cvxpy.expressions.variable import Variable
 
 
+# TODO (DCED): we should add a check if both arguments are the same variable.
+# Then we should canonicalize to square so the Hessian is correct.
 def multiply_canon(expr, args):
     #assert(False)
     t1 = args[0]
