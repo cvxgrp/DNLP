@@ -130,11 +130,11 @@ class Sum(AxisAtom, AffAtom):
             return {(var, var): np.zeros((self.args[0].size, self.args[0].size))}
         return self.args[0].hess
     
-    def hess_vec(self, duals):
+    def hess_vec(self, vec):
         """Returns the Hessian of the sum."""
-        assert(duals.size == self.size)
+        assert(vec.size == self.size)
         arg0 = self.args[0]
-        return arg0.hess_vec(duals * np.ones(arg0.size))
+        return arg0.hess_vec(vec * np.ones(arg0.size))
 
 @wraps(Sum)
 def sum(expr, axis: Optional[int] = None, keepdims: bool = False):
