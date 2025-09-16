@@ -19,13 +19,13 @@ from typing import Optional
 
 import numpy as np
 
-from cvxpy.expressions.variable import Variable
 import cvxpy.interface as intf
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
 from cvxpy.atoms.affine.affine_atom import AffAtom
 from cvxpy.atoms.axis_atom import AxisAtom
 from cvxpy.constraints.constraint import Constraint
+from cvxpy.expressions.variable import Variable
 
 
 class Sum(AxisAtom, AffAtom):
@@ -129,6 +129,12 @@ class Sum(AxisAtom, AffAtom):
         if isinstance(self.args[0], Variable):
             return {(var, var): np.zeros((self.args[0].size, self.args[0].size))}
         return self.args[0].hess
+    
+    def hess_vec(self, duals):
+        """Returns the Hessian of the sum."""
+        assert(duals.size == self.size)
+        arg0 = self.args[0]
+        return arg0.hess_vec(duals * np.ones(arg0.size))
 
 @wraps(Sum)
 def sum(expr, axis: Optional[int] = None, keepdims: bool = False):

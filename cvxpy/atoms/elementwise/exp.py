@@ -19,6 +19,7 @@ from typing import Tuple
 import numpy as np
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
+from cvxpy.expressions.variable import Variable
 
 
 class exp(Elementwise):
@@ -84,3 +85,9 @@ class exp(Elementwise):
         cols = self.size
         grad_vals = np.exp(values[0])
         return [exp.elemwise_grad_to_diag(grad_vals, rows, cols)]
+
+    def hess_vec(self, vec):
+        """ TODO """
+        x = self.args[0]
+        assert(isinstance(x, Variable) and vec.size == self.size)
+        return {(x, x): np.diag( np.exp(x.value) * vec)}

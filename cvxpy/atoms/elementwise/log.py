@@ -19,6 +19,7 @@ import numpy as np
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.constraints.constraint import Constraint
+from cvxpy.expressions.variable import Variable
 
 
 class log(Elementwise):
@@ -102,6 +103,11 @@ class log(Elementwise):
         else:
             hess_vals = -1.0/(values[0] ** 2)
             return [log.elemwise_grad_to_diag(hess_vals, rows, cols)]
+        
+    def hess_vec(self, vec):
+        x = self.args[0]
+        assert(isinstance(x, Variable) and vec.size == self.size)
+        return {(x, x): np.diag( -vec / (x.value ** 2))}
 
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.

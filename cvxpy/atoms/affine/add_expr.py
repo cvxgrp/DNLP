@@ -134,3 +134,25 @@ class AddExpression(AffAtom):
         # For sum expressions, the Hessian is zero.
         import numpy as np
         return list(np.ones(len(self.args)))
+    
+    def hess_vec(self, vec):
+        """
+        Computes the merged Hessian-vector product dictionary for all arguments.
+        If a key appears in several, their values are summed.
+        """
+        hess_dict = {}
+
+        for arg in self.args:
+            if not arg.is_affine():
+                arg_hess = arg.hess_vec(vec)
+                for k, v in arg_hess.items():
+                    if k in hess_dict:
+                        hess_dict[k] += v
+                    else:
+                        hess_dict[k] = v
+
+        return hess_dict
+
+
+
+        
