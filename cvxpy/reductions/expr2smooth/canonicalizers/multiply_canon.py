@@ -18,24 +18,22 @@ limitations under the License.
 from cvxpy.expressions.variable import Variable
 
 
-# TODO (DCED): we should add a check if both arguments are the same variable.
-# Then we should canonicalize to square so the Hessian is correct.
+# If a user insert x * x where x is a variable it gets canonicalized to 
+# square(x) before this function is called.
 def multiply_canon(expr, args):
-    #assert(False)
     t1 = args[0]
     t2 = args[1]
     constraints = []
 
+    # if either is constant, no canonicalization needed
     if t1.is_constant() or t2.is_constant():
         return expr.copy([t1, t2]), []
 
-    #if not t1.is_affine():
     if not isinstance(t1, Variable):
         t1 = Variable(t1.shape)
         constraints += [t1 == args[0]]
         t1.value = args[0].value
 
-    #if not t2.is_affine():
     if not isinstance(t2, Variable):
         t2 = Variable(t2.shape)
         constraints += [t2 == args[1]]

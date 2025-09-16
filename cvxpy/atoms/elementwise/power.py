@@ -21,6 +21,7 @@ import cvxpy.utilities as u
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.expressions import cvxtypes
+from cvxpy.expressions.variable import Variable
 from cvxpy.utilities.power_tools import is_power2, pow_high, pow_mid, pow_neg
 
 
@@ -409,6 +410,26 @@ class power(Elementwise):
         hess_vals = float(p)*float(p-1)*np.power(values[0], float(p)-2)
         return [power.elemwise_grad_to_diag(hess_vals, rows, cols)]
 
+    def hess_vec(self, vec):
+        """Returns the 3D-Hessian of the atom times a vector.
+        # TODO (DCED): can the argument be a constant? Ask William
+        """
+        if self.p_rational is not None:
+            p = self.p_rational
+        elif self.p.value is not None:
+            p = self.p.value
+        else:
+            raise ValueError("Cannot compute hess of parametrized power when "
+                             "parameter value is unspecified.")
+
+        x = self.args[0]
+        assert(isinstance(x, Variable) and vec.size == self.size)
+        if p == 0 or p == 1:
+            return {}
+    
+        hess_vals = float(p)*float(p-1)*np.power(x.value, float(p)-2)
+        return {(x, x): np.diag(hess_vals * vec)}
+        
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.
         """

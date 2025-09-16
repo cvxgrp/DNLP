@@ -505,6 +505,21 @@ class Atom(Expression):
             A list of SciPy CSC sparse matrices or None.
         """
         raise NotImplementedError()
+    
+    #@abc.abstractmethod
+    def hess_vec(self, values):
+        """Gives the 3D Hessian of the atom times a vector.
+
+        TODO: how are matrix expressions handled?
+
+        Args:
+            values: A list of numeric values for the arguments.
+
+        Returns:
+            A dictionary with (var, var) as keys and 2D Numpy as values.
+        """
+        raise NotImplementedError("This atom does not have a Hessian, or it has not been "
+                                  "implemented yet.")
 
     @property
     def domain(self) -> List['Constraint']:

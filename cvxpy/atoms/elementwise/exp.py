@@ -87,7 +87,9 @@ class exp(Elementwise):
         return [exp.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
     def hess_vec(self, vec):
-        """ TODO """
+        """Returns the 3D-Hessian of the atom times a vector.
+        """
         x = self.args[0]
         assert(isinstance(x, Variable) and vec.size == self.size)
         return {(x, x): np.diag( np.exp(x.value) * vec)}
+    

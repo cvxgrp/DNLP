@@ -21,23 +21,24 @@ from typing import List, Tuple
 import numpy as np
 import scipy.sparse as sp
 
-from cvxpy.expressions.constants.constant import Constant
-from cvxpy.expressions.variable import Variable
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
 import cvxpy.utilities as u
 from cvxpy.atoms.affine.add_expr import AddExpression
 from cvxpy.atoms.affine.affine_atom import AffAtom
 from cvxpy.atoms.affine.conj import conj
+from cvxpy.atoms.affine.promote import Promote
 from cvxpy.atoms.affine.reshape import deep_flatten, reshape
 from cvxpy.atoms.affine.sum import sum as cvxpy_sum
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.error import DCPError
+from cvxpy.expressions.constants.constant import Constant
 from cvxpy.expressions.constants.parameter import (
     is_param_affine,
     is_param_free,
 )
 from cvxpy.expressions.expression import Expression
+from cvxpy.expressions.variable import Variable
 
 
 class BinaryOperator(AffAtom):
@@ -374,6 +375,32 @@ class multiply(MulExpression):
         D2X = sp.diags(y, format='csc')
         D2Y = sp.diags(x, format='csc')
         return [D2X, D2Y]
+    
+    def hess_vec(self, vec):
+        x = self.args[0]
+        y = self.args[1]
+        assert(x.size == y.size)
+
+        if x.is_constant() or y.is_constant():
+            return {}
+        
+        # x * y with x a scalar variable, y a vector variable
+        if not isinstance(x, Variable) and x.is_affine():
+            assert(isinstance(y, Variable) and type(x) == Promote)
+            x_var = x.args[0]
+            return {(x_var, y): vec, (y, x_var): vec}
+        
+        # x * y with x a vector variable, y a scalar
+        if not isinstance(y, Variable) and y.is_affine():
+            assert(isinstance(x, Variable) and type(y) == Promote)
+            y_var = y.args[0]
+            return {(x, y_var): vec, (y_var, x): vec}
+        
+        # if we arrive here both arguments should be variables and they
+        # should not be the same variable
+        assert(isinstance(x, Variable) and isinstance(y, Variable) and 
+               x.id != y.id)
+        return {(x, y): np.diag(vec), (y, x): np.diag(vec)}
 
     def graph_implementation(
         self, arg_objs, shape: Tuple[int, ...], data=None
@@ -485,6 +512,10 @@ class DivExpression(BinaryOperator):
     
     def point_in_domain(self):
         return np.ones(self.args[1].shape)
+
+    def hess_vec(self, vec):
+        raise RuntimeError("The hess_vec method of the division atom should never "
+                           "be called.")
 
     def graph_implementation(
         self, arg_objs, shape: Tuple[int, ...], data=None
