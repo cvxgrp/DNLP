@@ -132,7 +132,7 @@ class Sum(AxisAtom, AffAtom):
     
     def hess_vec(self, vec):
         """Returns the Hessian of the sum."""
-        # TODO (DCED): we assume vec is a scalar here, so we never use sum of a matrix.
+        # TODO (DCED): we assume vec is a scalar here, ie. we never use sum of a matrix.
         assert(vec.size == 1)
         arg0 = self.args[0]
         return arg0.hess_vec(vec * np.ones(arg0.size))
