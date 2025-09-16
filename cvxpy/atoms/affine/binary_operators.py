@@ -380,10 +380,17 @@ class multiply(MulExpression):
         x = self.args[0]
         y = self.args[1]
         assert(x.size == y.size)
-
-        if x.is_constant() or y.is_constant():
-            return {}
         
+        # constant * atom
+        if x.is_constant(): 
+            y_hess_vec = y.hess_vec(x.value * vec)
+            return y_hess_vec
+        
+        # atom * constant
+        if y.is_constant():
+            x_hess_vec = x.hess_vec(y.value * vec)
+            return x_hess_vec
+
         # x * y with x a scalar variable, y a vector variable
         if not isinstance(x, Variable) and x.is_affine():
             assert(isinstance(y, Variable) and type(x) == Promote)

@@ -3,6 +3,7 @@ import pytest
 
 import cvxpy as cp
 
+# TODO: should check what happens if we use * instead of cp.multiply
 
 class TestHessVecMultiply():
 
@@ -91,6 +92,53 @@ class TestHessVecMultiply():
         assert(np.allclose(result_dict[(y, x)], correct_matrix))
         assert(len(result_dict) == 2)
 
+    # scalar constant * phi(x) 
+    def test_hess_vec_scalar_constant_and_atom_one(self):
+        x = cp.Variable((3, ), name='x')
+        x.value = np.array([0.5, 1.0, 2.0])
+        log = cp.log(x)
+        mult = cp.multiply(3.0, log)
+        vec = np.array([5.0, 4.0, 3.0])
+        result_dict = mult.hess_vec(vec)
+        correct_matrix = 3 * log.hess_vec(vec)[(x, x)]
+        assert(np.allclose(result_dict[(x, x)], correct_matrix))
+        assert(len(result_dict) == 1)
 
+    # phi(x) * scalar constant
+    def test_hess_vec_scalar_constant_and_atom_two(self):
+        x = cp.Variable((3, ), name='x')
+        x.value = np.array([0.5, 1.0, 2.0])
+        log = cp.log(x)
+        mult = cp.multiply(log, 3.0)
+        vec = np.array([5.0, 4.0, 3.0])
+        result_dict = mult.hess_vec(vec)
+        correct_matrix = 3 * log.hess_vec(vec)[(x, x)]
+        assert(np.allclose(result_dict[(x, x)], correct_matrix))
+        assert(len(result_dict) == 1)
 
+    # vector constant * phi(x) 
+    def test_hess_vec_vector_constant_and_atom_one(self):
+        x = cp.Variable((3, ), name='x')
+        x.value = np.array([0.5, 1.0, 2.0])
+        log = cp.log(x)
+        constant_vector = np.array([7.0, 2.0, 3.0])
+        mult = cp.multiply(constant_vector, log)
+        vec = np.array([5.0, 4.0, 3.0])
+        result_dict = mult.hess_vec(vec)
+        correct_matrix = log.hess_vec(vec * constant_vector)[(x, x)]
+        assert(np.allclose(result_dict[(x, x)], correct_matrix))
+        assert(len(result_dict) == 1)
+
+    # phi(x) * vector constant
+    def test_hess_vec_vector_constant_and_atom_two(self):
+        x = cp.Variable((3, ), name='x')
+        x.value = np.array([0.5, 1.0, 2.0])
+        log = cp.log(x)
+        constant_vector = np.array([7.0, 2.0, 3.0])
+        mult = cp.multiply(log, constant_vector)
+        vec = np.array([5.0, 4.0, 3.0])
+        result_dict = mult.hess_vec(vec)
+        correct_matrix = log.hess_vec(vec * constant_vector)[(x, x)]
+        assert(np.allclose(result_dict[(x, x)], correct_matrix))
+        assert(len(result_dict) == 1)
 

@@ -71,6 +71,9 @@ class Variable(Leaf):
         """TODO: write message"""
 
         return {(self, self): sp.csc_matrix((self.size, self.size))}
+    
+    def hess_vec(self, vec):
+        return {}
 
     def variables(self) -> list[Variable]:
         """Returns itself as a variable."""
