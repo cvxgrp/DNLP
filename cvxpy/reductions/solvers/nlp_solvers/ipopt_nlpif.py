@@ -250,6 +250,7 @@ class IPOPT(NLPsolver):
     class Oracles(cyipopt.Problem):
         def __init__(self, problem, initial_point):
             self.problem = problem
+            self.grad_obj = np.zeros(initial_point.size, dtype=np.float64)
             self.hess_lagrangian = np.zeros((initial_point.size, initial_point.size),
                                              dtype=np.float64)
             self.main_var = []
@@ -274,8 +275,11 @@ class IPOPT(NLPsolver):
         def gradient(self, x):
             """Returns the gradient of the objective with respect to x."""
             self.set_variable_value(x)
+
+            # fill with zeros to reset from previous call
+            self.grad_obj.fill(0)
+
             grad_offset = 0
-            grad = np.zeros(x.size, dtype=np.float64)
             grad_dict = self.problem.objective.expr.grad
             for var in self.main_var:
                 size = var.size
@@ -283,9 +287,9 @@ class IPOPT(NLPsolver):
                     array = grad_dict[var]
                     if sp.issparse(array):
                         array = array.toarray().flatten(order='F')
-                    grad[grad_offset:grad_offset+size] = array
+                    self.grad_obj[grad_offset:grad_offset+size] = array
                 grad_offset += size
-            return grad
+            return self.grad_obj
 
         def constraints(self, x):
             """Returns the constraint values."""
@@ -358,6 +362,9 @@ class IPOPT(NLPsolver):
             return (np.array(rows), np.array(cols))
 
         def parse_hess_dict(self, hess_dict):
+            """ Adds the contribution of blocks defined in hess_dict to the full
+                hessian matrix 
+            """
             row_offset = 0
             for var1 in self.main_var:
                 col_offset = 0
