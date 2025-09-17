@@ -91,6 +91,38 @@ class rel_entr(Elementwise):
                                                              rows, cols)]
             return grad_list
 
+    # TODO (DCED): should we check domain in all hessian atoms?
+    def hess_vec(self, vec):
+        x = self.args[0]
+        y = self.args[1]
+        assert(x.id != y.id and (x.size == 1 or y.size == 1 or x.size == y.size))
+
+        # if one of the arguments is constant we raise an error for now,
+        # since that should possibly be handled in the canonicalization?
+        if x.is_constant() or y.is_constant():
+            raise NotImplementedError("Hessian for constant argument to relative" 
+                                      " entropy not supported.")
+
+        dx2_vals = vec / x.value
+        dy2_vals = vec * x.value / (y.value ** 2)
+        dxdy_vals = - vec / y.value
+
+        if (x.size == 1):
+            return {(x, x): np.array(np.sum(dx2_vals)),
+                    (y, y): np.diag(dy2_vals),
+                    (x, y): np.array(dxdy_vals),
+                    (y, x): np.array(dxdy_vals)}
+        elif (y.size == 1):
+            return {(x, x): np.diag(dx2_vals), 
+                    (y, y): np.array(np.sum(dy2_vals)),
+                    (x, y): np.array(dxdy_vals),
+                    (y, x): np.array(dxdy_vals)}
+        else:
+            return {(x, x): np.diag(dx2_vals ), 
+                    (y, y): np.diag(dy2_vals),
+                    (x, y): np.diag(dxdy_vals),
+                    (y, x): np.diag(dxdy_vals)}
+
     def _domain(self):
         """Returns constraints describing the domain of the node.
         """
