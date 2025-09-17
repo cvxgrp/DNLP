@@ -141,7 +141,7 @@ class AddExpression(AffAtom):
         If a key appears in several, their values are summed.
         """
         hess_dict = {}
-
+        
         for arg in self.args:
             if not arg.is_affine():
                 arg_hess = arg.hess_vec(vec)
