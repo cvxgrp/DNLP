@@ -91,22 +91,13 @@ class log(Elementwise):
         else:
             grad_vals = 1.0/values[0]
             return [log.elemwise_grad_to_diag(grad_vals, rows, cols)]
-    
-    def _hess(self, values):
-        """TODO: write message """
-        rows = self.args[0].size
-        cols = self.size
-        # Outside domain or on boundary.
-        if np.min(values[0]) <= 0:
-            # Non-differentiable.
-            return [None]
-        else:
-            hess_vals = -1.0/(values[0] ** 2)
-            return [log.elemwise_grad_to_diag(hess_vals, rows, cols)]
-        
-    def hess_vec(self, vec):
+            
+    def _verify_arguments_for_correct_hess_vec(self):
+        return isinstance(self.args[0], Variable)
+
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
-        assert(isinstance(x, Variable) and vec.size == self.size)
         return {(x, x): np.diag( -vec / (x.value ** 2))}
 
     def _domain(self) -> List[Constraint]:

@@ -381,52 +381,27 @@ class power(Elementwise):
         grad_vals = float(p)*np.power(values[0], float(p)-1)
         return [power.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
-    def _hess(self, values):
-        """TODO: write message
-        """
-        rows = self.args[0].size
-        cols = self.size
+    def _verify_arguments_for_correct_hess_vec(self):
+        # we can't compute the hessian if p is not constant and specified
+        if (self.p_rational is None and self.p.value is None):
+            return False
 
+        if not isinstance(self.args[0], Variable):
+            return False
+
+        return True
+
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
         if self.p_rational is not None:
             p = self.p_rational
         elif self.p.value is not None:
             p = self.p.value
-        else:
-            raise ValueError("Cannot compute grad of parametrized power when "
-                             "parameter value is unspecified.")
-
-        if p == 0:
-            # All zeros.
-            return [sp.csc_array((rows, cols), dtype='float64')]
-        # Outside domain or on boundary.
-        if not is_power2(p) and np.min(values[0]) <= 0:
-            if p < 1:
-                # Non-differentiable.
-                return [None]
-            else:
-                # Round up to zero.
-                values[0] = np.maximum(values[0], 0)
-
-        hess_vals = float(p)*float(p-1)*np.power(values[0], float(p)-2)
-        return [power.elemwise_grad_to_diag(hess_vals, rows, cols)]
-
-    def hess_vec(self, vec):
-        """Returns the 3D-Hessian of the atom times a vector.
-        # TODO (DCED): can the argument be a constant? Ask William
-        """
-        if self.p_rational is not None:
-            p = self.p_rational
-        elif self.p.value is not None:
-            p = self.p.value
-        else:
-            raise ValueError("Cannot compute hess of parametrized power when "
-                             "parameter value is unspecified.")
-
-        x = self.args[0]
-        assert(isinstance(x, Variable) and vec.size == self.size)
+    
         if p == 0 or p == 1:
             return {}
     
+        x = self.args[0]
         hess_vals = float(p)*float(p-1)*np.power(x.value, float(p)-2)
         return {(x, x): np.diag(hess_vals * vec)}
         

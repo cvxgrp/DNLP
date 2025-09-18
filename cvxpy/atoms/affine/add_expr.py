@@ -128,14 +128,10 @@ class AddExpression(AffAtom):
                 arg_objs[i] = lu.promote(arg, shape)
         return (lu.sum_expr(arg_objs), [])
 
-    def _hess(self, values):
-        """Computes the Hessian of the sum expression.
-        """
-        # For sum expressions, the Hessian is zero.
-        import numpy as np
-        return list(np.ones(len(self.args)))
-    
-    def hess_vec(self, vec):
+    def _verify_arguments_for_correct_hess_vec(self):
+        return True
+
+    def _hess_vec(self, vec):
         """
         Computes the merged Hessian-vector product dictionary for all arguments.
         If a key appears in several, their values are summed.
@@ -152,7 +148,3 @@ class AddExpression(AffAtom):
                         hess_dict[k] = v
 
         return hess_dict
-
-
-
-        

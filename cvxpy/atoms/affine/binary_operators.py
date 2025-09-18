@@ -349,37 +349,36 @@ class multiply(MulExpression):
         DX = sp.diags(y, format='csc')
         DY = sp.diags(x, format='csc')
         return [DX, DY]
-
-    def _hess(self, values):
-        """Compute the Hessian of elementwise multiplication w.r.t. each argument.
-
-        For z = x * y (elementwise), returns:
-        - d2z/dx2 = diag(y)
-        - d2z/dy2 = diag(x)
-
-        Args:
-            values: A list of numeric values for the arguments [x, y].
-
-        Returns:
-            A list of SciPy CSC sparse matrices [D2X, D2Y].
-        """
-        if isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable):
-            return {(self.args[0], self.args[1]): 1.0, 
-                    (self.args[1], self.args[0]): 1.0}
-        x = values[0]
-        y = values[1]
-        # what is the hessian of elementwise multiplication?
-        # Flatten in case inputs are not 1D
-        x = np.asarray(x).flatten(order='F')
-        y = np.asarray(y).flatten(order='F')
-        D2X = sp.diags(y, format='csc')
-        D2Y = sp.diags(x, format='csc')
-        return [D2X, D2Y]
     
-    def hess_vec(self, vec):
+    def _verify_arguments_for_correct_hess_vec(self):
         x = self.args[0]
         y = self.args[1]
-        assert(x.size == y.size)
+        if x.size != y.size:
+            return False
+
+        if x.is_constant() and y.is_constant():
+            return False
+
+        # one of the following must be true:
+        # 1. both arguments are variables
+        # 2. one argument is a constant
+        # 3. one argument is a Promote of a variable and the other is a variable
+        both_are_variables = isinstance(x, Variable) and isinstance(y, Variable)
+        one_is_constant = x.is_constant() or y.is_constant()
+        x_is_promote = type(x) == Promote and isinstance(y, Variable)
+        y_is_promote = type(y) == Promote and isinstance(x, Variable)
+
+        if not (both_are_variables or one_is_constant or x_is_promote or y_is_promote):
+            return False
+        
+        if both_are_variables and x.id == y.id:
+            return False
+
+        return True
+
+    def _hess_vec(self, vec):
+        x = self.args[0]
+        y = self.args[1]
         
         # constant * atom
         if x.is_constant(): 
@@ -393,20 +392,17 @@ class multiply(MulExpression):
 
         # x * y with x a scalar variable, y a vector variable
         if not isinstance(x, Variable) and x.is_affine():
-            assert(isinstance(y, Variable) and type(x) == Promote)
-            x_var = x.args[0]
+            assert(type(x) == Promote)
+            x_var = x.args[0] # here x is a Promote because of how we canonicalize
             return {(x_var, y): vec, (y, x_var): vec}
         
         # x * y with x a vector variable, y a scalar
         if not isinstance(y, Variable) and y.is_affine():
-            assert(isinstance(x, Variable) and type(y) == Promote)
-            y_var = y.args[0]
+            assert(type(y) == Promote)
+            y_var = y.args[0] # here y is a Promote because of how we canonicalize
             return {(x, y_var): vec, (y_var, x): vec}
         
-        # if we arrive here both arguments should be variables and they
-        # should not be the same variable
-        assert(isinstance(x, Variable) and isinstance(y, Variable) and 
-               x.id != y.id)
+        # if we arrive here both arguments are variables of the same size
         return {(x, y): np.diag(vec), (y, x): np.diag(vec)}
 
     def graph_implementation(
@@ -520,7 +516,11 @@ class DivExpression(BinaryOperator):
     def point_in_domain(self):
         return np.ones(self.args[1].shape)
 
-    def hess_vec(self, vec):
+    def _verify_arguments_for_correct_hess_vec(self):
+        raise RuntimeError("The _verify_arguments_for_correct_hess_vec method of"
+                           " the division atom should never be called.")
+
+    def _hess_vec(self, vec):
         raise RuntimeError("The hess_vec method of the division atom should never "
                            "be called.")
 

@@ -45,15 +45,3 @@ class TestHessAdd():
         result_dict = neg_log.hess_vec(vec)
         correct_matrix = -np.diag([ -5.0/(1.0**2), -4.0/(2.0**2), -3.0/(3.0**2)])
         assert(np.allclose(result_dict[(x, x)], correct_matrix))
-
-    """
-    def test_add_one_variable_two_logs(self):
-        pass 
-
-    def test_add_two_variables_two_logs(self):
-        pass
-
-        """
-
-
-

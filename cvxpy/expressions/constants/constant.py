@@ -117,13 +117,6 @@ class Constant(Leaf):
         return {}
 
     @property
-    def hess(self):
-        """
-        The hessian of a constant is also an empty dictionary.
-        """
-        return {}
-
-    @property
     def shape(self) -> Tuple[int, ...]:
         """Returns the (row, col) dimensions of the expression.
         """

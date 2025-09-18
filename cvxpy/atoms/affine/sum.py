@@ -25,7 +25,6 @@ import cvxpy.lin_ops.lin_utils as lu
 from cvxpy.atoms.affine.affine_atom import AffAtom
 from cvxpy.atoms.axis_atom import AxisAtom
 from cvxpy.constraints.constraint import Constraint
-from cvxpy.expressions.variable import Variable
 
 
 class Sum(AxisAtom, AffAtom):
@@ -123,15 +122,11 @@ class Sum(AxisAtom, AffAtom):
                 obj = lu.mul_expr(ones, arg_objs[0], shape)
         return (obj, [])
 
-    def _hess(self, values):
-        """Returns the Hessian of the sum."""
-        var = self.args[0].variables()[0]
-        if isinstance(self.args[0], Variable):
-            return {(var, var): np.zeros((self.args[0].size, self.args[0].size))}
-        return self.args[0].hess
-    
-    def hess_vec(self, vec):
-        """Returns the Hessian of the sum."""
+    def _verify_arguments_for_correct_hess_vec(self):
+        return True
+
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
         # TODO (DCED): we assume vec is a scalar here, ie. we never use sum of a matrix.
         assert(vec.size == 1)
         arg0 = self.args[0]

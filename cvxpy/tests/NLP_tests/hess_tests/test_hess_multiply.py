@@ -33,7 +33,7 @@ class TestHessVecMultiply():
         x.value = np.array([1.0, 2.0, 3.0])
         mult = cp.multiply(x, x)
         vec = np.array([5.0, 4.0, 3.0])
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             mult.hess_vec(vec)
 
     # x * y with x vector variable, y vector variable

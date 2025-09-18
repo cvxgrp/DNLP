@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import cvxpy as cp
 
@@ -6,16 +7,35 @@ import cvxpy as cp
 class TestHessVecRelativeEntropy():
 
     # x log (x/y) with x constant, y variable
+    # This should raise an error I (DCED) think because 
+    # we should have caught this in the canonicalization step
     def test_rel_entr_one_constant_test_one(self):
-        pass 
+        x = np.array([1, 2, 3])
+        y = cp.Variable(shape=(3,))
+        vec = np.array([5, 4, 3])
+        rel_entr = cp.rel_entr(x, y)
+        with pytest.raises(ValueError):
+            rel_entr.hess_vec(vec)
 
     # x log (x/y) with x variable, y constant
+    # This should raise an error I (DCED) think because 
+    # we should have caught this in the canonicalization step
     def test_rel_entr_one_constant_test_two(self):
-        pass 
+        x = cp.Variable(shape=(3,))
+        y = np.array([4, 5, 6])
+        vec = np.array([5, 4, 3])
+        rel_entr = cp.rel_entr(x, y)
+        with pytest.raises(ValueError):
+            rel_entr.hess_vec(vec)
 
     # x log (x/x) with x variable, should raise an error
     def test_rel_entr_same_variable(self):
-        pass
+        x = cp.Variable(shape=(3,))
+        vec = np.array([5, 4, 3])
+        x.value = np.array([1, 2, 3])
+        rel_entr = cp.rel_entr(x, x)
+        with pytest.raises(ValueError):
+            rel_entr.hess_vec(vec)
 
     # x log (x/y) with x vector variable, y vector variable
     def test_rel_entr_two_vector_variables_same_dimension(self):

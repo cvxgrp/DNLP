@@ -25,7 +25,6 @@ from cvxpy.atoms.affine.reshape import reshape
 from cvxpy.atoms.affine.vec import vec
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.expressions.expression import Expression
-from cvxpy.expressions.variable import Variable
 from cvxpy.utilities import key_utils as ku
 
 
@@ -108,16 +107,12 @@ class index(AffAtom):
         obj = lu.index(arg_objs[0], shape, data[0])
         return (obj, [])
     
-    def _hess(self, values):
-        var = self.args[0].variables()[0]
-        if isinstance(self.args[0], Variable):
-            return {(var, var): np.zeros((self.args[0].size, self.args[0].size))}
-        return self.args[0].hess
+    def _verify_arguments_for_correct_hess_vec(self):
+        return True
 
-    def hess_vec(self, vec):
-        """ TODO: add message """
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
         idx = self._orig_key
-        assert(vec.size == self.size)
         e = np.zeros(self.args[0].size)
         e[idx] = vec
         return self.args[0].hess_vec(e)
@@ -217,10 +212,12 @@ class special_index(AffAtom):
         obj = lu.reshape(mul_expr, final_shape)
         return (obj, [])
 
-    def hess_vec(self, vec):
-        """ TODO: add message """
+    def _verify_arguments_for_correct_hess_vec(self):
+        return True
+
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
         idx = self.key
-        assert(vec.size == self.size)
         e = np.zeros(self.args[0].size)
         e[idx] = vec
         return self.args[0].hess_vec(e)

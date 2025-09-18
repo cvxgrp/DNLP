@@ -21,6 +21,7 @@ from scipy.sparse import csc_array
 from scipy.special import rel_entr as rel_entr_scipy
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
+from cvxpy.expressions.variable import Variable
 
 
 class rel_entr(Elementwise):
@@ -91,34 +92,47 @@ class rel_entr(Elementwise):
                                                              rows, cols)]
             return grad_list
 
-    # TODO (DCED): should we check domain in all hessian atoms?
-    def hess_vec(self, vec):
+    def _verify_arguments_for_correct_hess_vec(self):
         x = self.args[0]
         y = self.args[1]
-        assert(x.id != y.id and (x.size == 1 or y.size == 1 or x.size == y.size))
+        
+        # we check that the arguments are of the same size or one of them 
+        # is a scalar
+        if not (x.size == 1 or y.size == 1 or x.size == y.size):
+            return False
 
-        # if one of the arguments is constant we raise an error for now,
-        # since that should possibly be handled in the canonicalization?
-        if x.is_constant() or y.is_constant():
-            raise NotImplementedError("Hessian for constant argument to relative" 
-                                      " entropy not supported.")
+        # we assume both arguments must be variables (the case where one 
+        # argument is constant should perhaps been caught in the canonicalization?)
+        if not (isinstance(x, Variable) and isinstance(y, Variable)):
+            return False
 
+        # we assume that the arguments correspond to different variables
+        # (otherwise the differentation logic fails)
+        if x.id == y.id:
+            return False 
+
+        return True
+
+    def _hess_vec(self, vec):
+        """ See the docstring of the hess_vec method of the atom class. """
+        x = self.args[0]
+        y = self.args[1]
         dx2_vals = vec / x.value
         dy2_vals = vec * x.value / (y.value ** 2)
         dxdy_vals = - vec / y.value
 
-        if (x.size == 1):
+        if x.size == 1:
             return {(x, x): np.array(np.sum(dx2_vals)),
                     (y, y): np.diag(dy2_vals),
                     (x, y): np.array(dxdy_vals),
                     (y, x): np.array(dxdy_vals)}
-        elif (y.size == 1):
+        elif y.size == 1:
             return {(x, x): np.diag(dx2_vals), 
                     (y, y): np.array(np.sum(dy2_vals)),
                     (x, y): np.array(dxdy_vals),
                     (y, x): np.array(dxdy_vals)}
         else:
-            return {(x, x): np.diag(dx2_vals ), 
+            return {(x, x): np.diag(dx2_vals), 
                     (y, y): np.diag(dy2_vals),
                     (x, y): np.diag(dxdy_vals),
                     (y, x): np.diag(dxdy_vals)}
