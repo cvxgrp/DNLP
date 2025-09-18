@@ -397,7 +397,7 @@ class power(Elementwise):
             p = self.p_rational
         elif self.p.value is not None:
             p = self.p.value
-    
+        
         if p == 0 or p == 1:
             return {}
     

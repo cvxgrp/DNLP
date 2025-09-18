@@ -375,8 +375,7 @@ class IPOPT(NLPsolver):
                                         col_offset:col_offset+var2.size] += var_hess
                     col_offset += var2.size
                 row_offset += var1.size
-            
-
+   
         def hessianstructure(self):
             return np.nonzero(np.tril(np.ones((self.initial_point.size, self.initial_point.size))))
 

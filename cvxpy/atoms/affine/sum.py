@@ -19,6 +19,7 @@ from typing import Optional
 
 import numpy as np
 
+from cvxpy.expressions.variable import Variable
 import cvxpy.interface as intf
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
@@ -131,6 +132,7 @@ class Sum(AxisAtom, AffAtom):
         assert(vec.size == 1)
         arg0 = self.args[0]
         return arg0.hess_vec(vec * np.ones(arg0.size))
+      
 
 @wraps(Sum)
 def sum(expr, axis: Optional[int] = None, keepdims: bool = False):
