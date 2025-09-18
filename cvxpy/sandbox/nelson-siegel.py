@@ -1,6 +1,8 @@
-import numpy as np
-import cvxpy as cp
 import matplotlib.pyplot as plt
+import numpy as np
+
+import cvxpy as cp
+
 
 def nelson_siegel(tau, beta0, beta1, beta2, lambda_param):
     """

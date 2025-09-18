@@ -21,8 +21,6 @@ from typing import List, Tuple
 import numpy as np
 import scipy.sparse as sp
 
-from cvxpy.expressions.constants.constant import Constant
-from cvxpy.expressions.variable import Variable
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
 import cvxpy.utilities as u

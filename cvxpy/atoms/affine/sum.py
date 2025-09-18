@@ -19,7 +19,6 @@ from typing import Optional
 
 import numpy as np
 
-from cvxpy.expressions.variable import Variable
 import cvxpy.interface as intf
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
