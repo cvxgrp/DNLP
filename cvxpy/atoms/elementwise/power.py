@@ -381,7 +381,7 @@ class power(Elementwise):
         grad_vals = float(p)*np.power(values[0], float(p)-1)
         return [power.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         # we can't compute the hessian if p is not constant and specified
         if (self.p_rational is None and self.p.value is None):
             return False

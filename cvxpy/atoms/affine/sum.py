@@ -122,7 +122,7 @@ class Sum(AxisAtom, AffAtom):
                 obj = lu.mul_expr(ones, arg_objs[0], shape)
         return (obj, [])
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         return True
 
     def _hess_vec(self, vec):

@@ -107,7 +107,7 @@ class index(AffAtom):
         obj = lu.index(arg_objs[0], shape, data[0])
         return (obj, [])
     
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         return True
 
     def _hess_vec(self, vec):
@@ -211,7 +211,7 @@ class special_index(AffAtom):
         obj = lu.reshape(mul_expr, final_shape)
         return (obj, [])
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         return True
 
     def _hess_vec(self, vec):

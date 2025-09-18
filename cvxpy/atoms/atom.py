@@ -453,7 +453,7 @@ class Atom(Expression):
             sum_{i=1}^m vec[i] * ∇²φ_i(x),
 
         where φ_i is the i-th component of φ and vec is an m-dimensional
-        weight vector. The result is an n × n matrix representing this
+        weight vector. The result is an n x n matrix representing this
         weighted combination of component Hessians.
 
         It returns a dictionary with (var, var) as keys and 2D Numpy arrays
@@ -482,7 +482,7 @@ class Atom(Expression):
 
         # for nonlinear atoms we typically require that the arguments are variables 
         # (this is guaranteed in the NLP setting through the canonicalization)
-        if not self._verify_arguments_for_correct_hess_vec():
+        if not self._verify_hess_vec_args():
             raise ValueError("Argument error in hess_vec.")
     
         return self._hess_vec(vec)
@@ -502,7 +502,7 @@ class Atom(Expression):
         raise NotImplementedError()
     
     @abc.abstractmethod
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         """ Atom-specific Hessian-vector product. For a description, see the docstring of 
             the hess_vec method of the atom class.
         """

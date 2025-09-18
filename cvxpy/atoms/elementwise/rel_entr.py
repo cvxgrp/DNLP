@@ -92,7 +92,7 @@ class rel_entr(Elementwise):
                                                              rows, cols)]
             return grad_list
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         x = self.args[0]
         y = self.args[1]
         

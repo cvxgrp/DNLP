@@ -114,9 +114,9 @@ class Promote(AffAtom):
         """
         return (lu.promote(arg_objs[0], shape), [])
 
-    def _verify_arguments_for_correct_hess_vec(self):
-        return ValueError("The verify-arguments-hess-vec of Promote should"
+    def _verify_hess_vec_args(self):
+        return ValueError("The _verify_hess_vec_args method of Promote should"
                           " never be called.")
 
     def _hess_vec(self, values):
-        raise ValueError("The _hess_vec of Promote should never be called.")
+        raise ValueError("The _hess_vec method of Promote should never be called.")

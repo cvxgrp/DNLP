@@ -90,7 +90,7 @@ class entr(Elementwise):
             grad_vals = -np.log(values[0]) - 1
             return [entr.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):

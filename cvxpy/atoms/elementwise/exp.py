@@ -86,11 +86,10 @@ class exp(Elementwise):
         grad_vals = np.exp(values[0])
         return [exp.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
         return {(x, x): np.diag( np.exp(x.value) * vec)}
-    

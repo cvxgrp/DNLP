@@ -350,7 +350,7 @@ class multiply(MulExpression):
         DY = sp.diags(x, format='csc')
         return [DX, DY]
     
-    def _verify_arguments_for_correct_hess_vec(self):
+    def _verify_hess_vec_args(self):
         x = self.args[0]
         y = self.args[1]
         if x.size != y.size:
@@ -404,32 +404,6 @@ class multiply(MulExpression):
         
         # if we arrive here both arguments are variables of the same size
         return {(x, y): np.diag(vec), (y, x): np.diag(vec)}
-
-    def _hess(self, values):
-        """Compute the Hessian of elementwise multiplication w.r.t. each argument.
-
-        For z = x * y (elementwise), returns:
-        - d2z/dx2 = diag(y)
-        - d2z/dy2 = diag(x)
-
-        Args:
-            values: A list of numeric values for the arguments [x, y].
-
-        Returns:
-            A list of SciPy CSC sparse matrices [D2X, D2Y].
-        """
-        if isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable):
-            return {(self.args[0], self.args[1]): 1.0, 
-                    (self.args[1], self.args[0]): 1.0}
-        x = values[0]
-        y = values[1]
-        # what is the hessian of elementwise multiplication?
-        # Flatten in case inputs are not 1D
-        x = np.asarray(x).flatten(order='F')
-        y = np.asarray(y).flatten(order='F')
-        D2X = sp.diags(y, format='csc')
-        D2Y = sp.diags(x, format='csc')
-        return [D2X, D2Y]
 
     def graph_implementation(
         self, arg_objs, shape: Tuple[int, ...], data=None
@@ -542,8 +516,8 @@ class DivExpression(BinaryOperator):
     def point_in_domain(self):
         return np.ones(self.args[1].shape)
 
-    def _verify_arguments_for_correct_hess_vec(self):
-        raise RuntimeError("The _verify_arguments_for_correct_hess_vec method of"
+    def _verify_hess_vec_args(self):
+        raise RuntimeError("The _verify_hess_vec_args method of"
                            " the division atom should never be called.")
 
     def _hess_vec(self, vec):
