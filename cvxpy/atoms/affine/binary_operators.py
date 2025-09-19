@@ -32,7 +32,6 @@ from cvxpy.atoms.affine.reshape import deep_flatten, reshape
 from cvxpy.atoms.affine.sum import sum as cvxpy_sum
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.error import DCPError
-from cvxpy.expressions.constants.constant import Constant
 from cvxpy.expressions.constants.parameter import (
     is_param_affine,
     is_param_free,
