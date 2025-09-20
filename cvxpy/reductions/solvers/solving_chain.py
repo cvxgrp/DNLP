@@ -248,11 +248,14 @@ def construct_solving_chain(problem, candidates,
         # We adopt the convention to solve an NLP using smooth approximations
         # of non-smooth atoms first, and then, solve again using an exact
         # and LICQ friendly reformulation.
+        # For the second solve we pass in the original problem object to
+        # the Expr2Smooth reduction, so that we don't apply the reduction
+        # on the smooth approximation canonicalization.
         if any(ns in problem.atoms() for ns in NON_SMOOTH_ATOMS):
             reductions += [Expr2Smooth(smooth_approx=True),
                            IPOPT_nlp(),
                            #InitializeSecondSolve(),
-                           Expr2Smooth(smooth_approx=False),
+                           Expr2Smooth(problem=problem, smooth_approx=False),
                            IPOPT_nlp()]
         else:
             reductions += [Expr2Smooth(smooth_approx=False),
