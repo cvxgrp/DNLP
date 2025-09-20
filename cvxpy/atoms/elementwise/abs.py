@@ -93,7 +93,3 @@ class abs(Elementwise):
         for the abs atom. We assume that the argument will be a variable.
         """
         raise NotImplementedError("Second derivative of abs is not implemented yet.")
-        hess_dict = {}
-        var = self.args[0]
-        hess_dict[(var, var)] = np.diag(np.sign(var.value) * vec)
-        return hess_dict

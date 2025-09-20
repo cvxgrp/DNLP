@@ -19,6 +19,7 @@ import numpy as np
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.constraints.constraint import Constraint
+from cvxpy.expressions.variable import Variable
 
 
 class sin(Elementwise):
@@ -84,7 +85,7 @@ class sin(Elementwise):
         return [sin.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
     def _verify_hess_vec_args(self):
-        return True
+        return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """
@@ -159,7 +160,7 @@ class cos(Elementwise):
         return [cos.elemwise_grad_to_diag(grad_vals, rows, cols)]
     
     def _verify_hess_vec_args(self):
-        return True
+        return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """
@@ -235,7 +236,7 @@ class tan(Elementwise):
         return [tan.elemwise_grad_to_diag(grad_vals, rows, cols)]
 
     def _verify_hess_vec_args(self):
-        return True
+        return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """

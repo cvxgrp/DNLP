@@ -24,6 +24,7 @@ from scipy import linalg as LA
 from cvxpy.atoms.affine.wraps import psd_wrap
 from cvxpy.atoms.atom import Atom
 from cvxpy.expressions.expression import Expression
+from cvxpy.expressions.variable import Variable
 from cvxpy.interface.matrix_utilities import is_sparse
 from cvxpy.utilities.linalg import sparse_cholesky
 
@@ -183,7 +184,7 @@ class SymbolicQuadForm(Atom):
         return True
 
     def _verify_hess_vec_args(self):
-        return True
+        return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """
