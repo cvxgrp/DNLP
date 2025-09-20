@@ -128,7 +128,7 @@ class QuadForm(Atom):
         return [sp.csc_array([D.ravel(order="F")]).T]
 
     def _verify_hess_vec_args(self):
-        return True
+        return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
         """
