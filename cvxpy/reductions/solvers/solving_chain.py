@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 
-from cvxpy.atoms import EXP_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS
+from cvxpy.atoms import EXP_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS, NON_SMOOTH_ATOMS
 from cvxpy.constraints import (
     PSD,
     SOC,
@@ -142,12 +142,12 @@ def _reductions_for_problem_class(
         reductions += [complex2real.Complex2Real()]
     if gp:
         reductions += [Dgp2Dcp()]
+    # we need to handle the nlp flag here because we want to avoid
+    # raising an error if the problem is not DCP when nlp=True.
     if nlp:
         if type(problem.objective) == Maximize:
             reductions += [FlipObjective()]
-        reductions += [Expr2Smooth()]
         return reductions
-
     if not gp and not problem.is_dcp():
         append = build_non_disciplined_error_msg(problem, 'DCP')
         if problem.is_dgp():
@@ -245,7 +245,18 @@ def construct_solving_chain(problem, candidates,
     reductions = _reductions_for_problem_class(problem, candidates, gp, solver_opts, nlp)
 
     if nlp:
-        reductions += [IPOPT_nlp()]
+        # We adopt the convention to solve an NLP using smooth approximations
+        # of non-smooth atoms first, and then, solve again using an exact
+        # and LICQ friendly reformulation.
+        if any(ns in problem.atoms() for ns in NON_SMOOTH_ATOMS):
+            reductions += [Expr2Smooth(smooth_approx=True),
+                           IPOPT_nlp(),
+                           #InitializeSecondSolve(),
+                           Expr2Smooth(smooth_approx=False),
+                           IPOPT_nlp()]
+        else:
+            reductions += [Expr2Smooth(smooth_approx=False),
+                           IPOPT_nlp()]
         return SolvingChain(reductions=reductions)
     # Process DPP status of the problem.
     dpp_context = 'dcp' if not gp else 'dgp'

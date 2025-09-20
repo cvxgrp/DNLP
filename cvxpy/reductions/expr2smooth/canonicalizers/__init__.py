@@ -37,10 +37,10 @@ from cvxpy.reductions.expr2smooth.canonicalizers.entr_canon import entr_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.rel_entr_canon import rel_entr_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.kl_div_canon import kl_div_canon
 
-CANON_METHODS = {
-    abs: abs_canon,
-    maximum : maximum_canon,
-    minimum: minimum_canon,
+SMITH_CANON_METHODS = {
+    #abs: abs_canon,
+    #maximum : maximum_canon,
+    #minimum: minimum_canon,
     log: log_canon,
     exp: exp_canon,
     power: power_canon,
@@ -50,4 +50,16 @@ CANON_METHODS = {
     rel_entr: rel_entr_canon,
     kl_div: kl_div_canon,
     multiply: multiply_canon
+}
+
+SMOOTH_APPROX_METHODS = {
+    abs: abs_canon,
+    maximum : maximum_canon,
+    minimum: minimum_canon,
+}
+
+SMOOTH_CANON_METHODS = {
+    abs: abs_canon,
+    maximum : maximum_canon,
+    minimum: minimum_canon,
 }
