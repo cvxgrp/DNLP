@@ -28,7 +28,7 @@ from cvxpy.reductions.expr2smooth.canonicalizers.div_canon import div_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.log_canon import log_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.exp_canon import exp_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.minimum_canon import minimum_canon
-from cvxpy.reductions.expr2smooth.canonicalizers.abs_canon import abs_canon
+from cvxpy.reductions.expr2smooth.canonicalizers.abs_canon import smooth_abs_canon, approx_abs_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.multiply_canon import multiply_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.pnorm_canon import pnorm_canon
 from cvxpy.reductions.expr2smooth.canonicalizers.power_canon import power_canon
@@ -53,13 +53,13 @@ SMITH_CANON_METHODS = {
 }
 
 SMOOTH_APPROX_METHODS = {
-    abs: abs_canon,
+    abs: approx_abs_canon,
     maximum : maximum_canon,
     minimum: minimum_canon,
 }
 
 SMOOTH_CANON_METHODS = {
-    abs: abs_canon,
+    abs: smooth_abs_canon,
     maximum : maximum_canon,
     minimum: minimum_canon,
 }
