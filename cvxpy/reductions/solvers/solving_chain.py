@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 
 from cvxpy import settings as s
-from cvxpy.atoms import EXP_ATOMS, NON_SMOOTH_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS
+from cvxpy.atoms import EXP_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS
 from cvxpy.constraints import (
     PSD,
     SOC,
@@ -109,7 +109,6 @@ def _reductions_for_problem_class(
     candidates,
     gp: bool = False,
     solver_opts=None,
-    nlp: bool = False
 ) -> list[Reduction]:
     """
     Builds a chain that rewrites a problem into an intermediate
@@ -143,12 +142,6 @@ def _reductions_for_problem_class(
         reductions += [complex2real.Complex2Real()]
     if gp:
         reductions += [Dgp2Dcp()]
-    # we need to handle the nlp flag here because we want to avoid
-    # raising an error if the problem is not DCP when nlp=True.
-    if nlp:
-        if type(problem.objective) == Maximize:
-            reductions += [FlipObjective()]
-        return reductions
     if not gp and not problem.is_dcp():
         append = build_non_disciplined_error_msg(problem, 'DCP')
         if problem.is_dgp():
@@ -197,7 +190,6 @@ def construct_solving_chain(problem, candidates,
                             canon_backend: str | None = None,
                             solver_opts: dict | None = None,
                             specified_solver: str | None = None,
-                            nlp: bool = False,
                             ) -> "SolvingChain":
     """Build a reduction chain from a problem to an installed solver.
 
@@ -243,26 +235,8 @@ def construct_solving_chain(problem, candidates,
     """
     if len(problem.variables()) == 0:
         return SolvingChain(reductions=[ConstantSolver()])
-    reductions = _reductions_for_problem_class(problem, candidates, gp, solver_opts, nlp)
+    reductions = _reductions_for_problem_class(problem, candidates, gp, solver_opts)
 
-    if nlp:
-        # We adopt the convention to solve an NLP using smooth approximations
-        # of non-smooth atoms first, and then, solve again using an exact
-        # and LICQ friendly reformulation.
-        # For the second solve we pass in the original problem object to
-        # the Expr2Smooth reduction, so that we don't apply the reduction
-        # on the smooth approximation canonicalization.
-        if any(ns in problem.atoms() for ns in NON_SMOOTH_ATOMS):
-            reductions += [Expr2Smooth(smooth_approx=True),
-                           IPOPT_nlp(),
-                           #InitializeSecondSolve(),
-                           Expr2Smooth(smooth_approx=False),
-                           IPOPT_nlp()]
-            return NLPSolvingChain(reductions=reductions, smooth_approx=True)
-        else:
-            reductions += [Expr2Smooth(smooth_approx=False),
-                           IPOPT_nlp()]
-            return NLPSolvingChain(reductions=reductions)
     # Process DPP status of the problem.
     dpp_context = 'dcp' if not gp else 'dgp'
     if ignore_dpp or not problem.is_dpp(dpp_context):
