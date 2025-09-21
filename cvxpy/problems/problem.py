@@ -1229,7 +1229,7 @@ class Problem(u.Canonical):
             return self.value
 
         data, solving_chain, inverse_data = self.get_problem_data(
-            solver, gp, enforce_dpp, ignore_dpp, verbose, canon_backend, kwargs, nlp
+            solver, gp, enforce_dpp, ignore_dpp, verbose, canon_backend, kwargs
         )
 
         if verbose:
