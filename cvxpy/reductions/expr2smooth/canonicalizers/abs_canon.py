@@ -16,7 +16,6 @@ limitations under the License.
 
 import numpy as np
 
-# TODO (DCED): ask William if this the multiplication we want to use
 from cvxpy.atoms.affine.binary_operators import multiply
 from cvxpy.atoms.elementwise.exp import exp
 from cvxpy.atoms.elementwise.log import log
@@ -42,12 +41,6 @@ def smooth_abs_canon(expr, args):
         t1.value = np.abs(args[0].value)
         y.value = np.sign(args[0].value)
     
-    t1.value = np.ones(shape)
-    y.value = np.zeros(shape)
-
-    # TODO (DCED): check how multiply is canonicalized. We don't want to introduce a 
-    # new variable for y inside multiply. But args[0] should potentially be canonicalized 
-    # further?
     return t1, [y ** 2 == np.ones(shape), t1 == multiply(y, args[0])]
 
 def approx_abs_canon(expr, args):
