@@ -52,7 +52,6 @@ from cvxpy.reductions.solvers.nlp_solvers.ipopt_nlpif import IPOPT as IPOPT_nlp
 from cvxpy.reductions.solvers.qp_solvers.qp_solver import QpSolver
 from cvxpy.reductions.solvers.solver import Solver
 from cvxpy.reductions.solvers.solving_chain import (
-    NLPSolvingChain,
     SolvingChain,
     construct_solving_chain,
 )
@@ -1194,6 +1193,10 @@ class Problem(u.Canonical):
                 return self.value
 
         if nlp:
+            if type(self.objective) == Maximize:
+                reductions = [FlipObjective()]
+            else:
+                reductions = []
             # We adopt the convention to solve an NLP using smooth approximations
             # of non-smooth atoms first, and then, solve again using an exact
             # and LICQ friendly reformulation.
@@ -1201,20 +1204,28 @@ class Problem(u.Canonical):
             # the Expr2Smooth reduction, so that we don't apply the reduction
             # on the smooth approximation canonicalization.
             if any(ns in self.atoms() for ns in NON_SMOOTH_ATOMS):
-                reductions += [Expr2Smooth(smooth_approx=True),
-                                IPOPT_nlp(),
-                                #InitializeSecondSolve(),
-                                Expr2Smooth(smooth_approx=False),
-                                IPOPT_nlp()]
-                nlp_chain = NLPSolvingChain(reductions=reductions, smooth_approx=True)
-                nlp_chain.solve(smooth_approx=True)
-                self.unpack_results
+                approx_reductions = reductions + [Expr2Smooth(smooth_approx=True),
+                                                                    IPOPT_nlp()]
+                approx_chain = SolvingChain(reductions=approx_reductions)
+                problem, inverse_data = approx_chain.apply(problem=self)
+                solution = approx_chain.solver.solve_via_data(problem, warm_start,
+                                                                verbose, solver_opts=kwargs)
+                self.unpack_results(solution, approx_chain, inverse_data)
+                smooth_reductions = reductions + [Expr2Smooth(smooth_approx=False),
+                                                                    IPOPT_nlp()]
+                smooth_chain = SolvingChain(reductions=smooth_reductions)
+                problem, inverse_data = smooth_chain.apply(problem=self)
+                solution = smooth_chain.solver.solve_via_data(problem, warm_start,
+                                                                verbose, solver_opts=kwargs)
+                self.unpack_results(solution, smooth_chain, inverse_data)
             else:
-                reductions += [Expr2Smooth(smooth_approx=False),
-                            IPOPT_nlp()]
-                nlp_chain = NLPSolvingChain(reductions=reductions)
-                nlp_chain.solve(smooth_approx=False)
-            
+                nlp_reductions = reductions + [Expr2Smooth(smooth_approx=False),
+                                                                    IPOPT_nlp()]
+                nlp_chain = SolvingChain(reductions=nlp_reductions)
+                problem, inverse_data = nlp_chain.apply(problem=self)
+                solution = nlp_chain.solver.solve_via_data(problem, warm_start,
+                                                            verbose, solver_opts=kwargs)
+                self.unpack_results(solution, nlp_chain, inverse_data)
             return self.value
 
         data, solving_chain, inverse_data = self.get_problem_data(
