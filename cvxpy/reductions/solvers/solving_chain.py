@@ -4,7 +4,8 @@ import warnings
 
 import numpy as np
 
-from cvxpy.atoms import EXP_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS, NON_SMOOTH_ATOMS
+from cvxpy import settings as s
+from cvxpy.atoms import EXP_ATOMS, NON_SMOOTH_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS
 from cvxpy.constraints import (
     PSD,
     SOC,
@@ -255,12 +256,13 @@ def construct_solving_chain(problem, candidates,
             reductions += [Expr2Smooth(smooth_approx=True),
                            IPOPT_nlp(),
                            #InitializeSecondSolve(),
-                           Expr2Smooth(problem=problem, smooth_approx=False),
+                           Expr2Smooth(smooth_approx=False),
                            IPOPT_nlp()]
+            return NLPSolvingChain(reductions=reductions, smooth_approx=True)
         else:
             reductions += [Expr2Smooth(smooth_approx=False),
                            IPOPT_nlp()]
-        return SolvingChain(reductions=reductions)
+            return NLPSolvingChain(reductions=reductions)
     # Process DPP status of the problem.
     dpp_context = 'dcp' if not gp else 'dgp'
     if ignore_dpp or not problem.is_dpp(dpp_context):
@@ -505,3 +507,82 @@ class SolvingChain(Chain):
         """
         return self.solver.solve_via_data(data, warm_start, verbose,
                                           solver_opts, problem._solver_cache)
+
+
+class NLPSolvingChain(Chain):
+    """A reduction chain that ends with a solver.
+
+    Parameters
+    ----------
+    reductions : list[Reduction]
+        A list of reductions. The last reduction in the list must be a solver
+        instance.
+
+    Attributes
+    ----------
+    reductions : list[Reduction]
+        A list of reductions.
+    solver : Solver
+        The solver, i.e., reductions[-1].
+    """
+
+    def __init__(self, problem=None, reductions=None, smooth_approx=False) -> None:
+        super(NLPSolvingChain, self).__init__(problem=problem,
+                                           reductions=reductions)
+        if not isinstance(self.reductions[-1], Solver):
+            raise ValueError("Solving chains must terminate with a Solver.")
+        self.solver = self.reductions[-1]
+        self.smooth_approx = smooth_approx
+
+    def solve(self, problem, warm_start: bool, verbose: bool, solver_opts):
+        """Solves the problem by applying the chain.
+
+        Applies each reduction in the chain to the problem, solves it,
+        and then inverts the chain to return a solution of the supplied
+        problem.
+
+        Parameters
+        ----------
+        problem : Problem
+            The problem to solve.
+        warm_start : bool
+            Whether to warm start the solver.
+        verbose : bool
+            Whether to enable solver verbosity.
+        solver_opts : dict
+            Solver specific options.
+
+        Returns
+        -------
+        solution : Solution
+            A solution to the problem.
+        """
+        if self.smooth_approx:
+            original_problem = problem   
+            inverse_data = []
+            for r in self.reductions[:2]:
+                if verbose:
+                    s.LOGGER.info('Applying reduction %s', type(r).__name__)
+                problem, inv = r.apply(problem)
+                inverse_data.append(inv)
+            data = problem
+            solution = self.solver.solve_via_data(data, warm_start,
+                                                verbose, solver_opts)
+            # do something with solution. i.e. initialize next solve
+            # reset problem and inverse data
+            problem = original_problem
+            inverse_data = []
+            for r in self.reductions[2:]:
+                if verbose:
+                    s.LOGGER.info('Applying reduction %s', type(r).__name__)
+                problem, inv = r.apply(problem)
+                inverse_data.append(inv)
+            data = problem
+            solution = self.solver.solve_via_data(data, warm_start,
+                                                verbose, solver_opts)
+            return self.invert(solution, inverse_data)
+        else:
+            data, inverse_data = self.apply(problem)
+            solution = self.solver.solve_via_data(data, warm_start,
+                                                verbose, solver_opts)
+            return self.invert(solution, inverse_data)
