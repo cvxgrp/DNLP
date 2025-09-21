@@ -4,7 +4,6 @@ import warnings
 
 import numpy as np
 
-from cvxpy import settings as s
 from cvxpy.atoms import EXP_ATOMS, NONPOS_ATOMS, PSD_ATOMS, SOC_ATOMS
 from cvxpy.constraints import (
     PSD,
@@ -37,14 +36,12 @@ from cvxpy.reductions.discrete2mixedint.valinvec2mixedint import (
     Valinvec2mixedint,
 )
 from cvxpy.reductions.eval_params import EvalParams
-from cvxpy.reductions.expr2smooth.expr2smooth import Expr2Smooth
 from cvxpy.reductions.flip_objective import FlipObjective
 from cvxpy.reductions.qp2quad_form import qp2symbolic_qp
 from cvxpy.reductions.qp2quad_form.qp_matrix_stuffing import QpMatrixStuffing
 from cvxpy.reductions.reduction import Reduction
 from cvxpy.reductions.solvers import defines as slv_def
 from cvxpy.reductions.solvers.constant_solver import ConstantSolver
-from cvxpy.reductions.solvers.nlp_solvers.ipopt_nlpif import IPOPT as IPOPT_nlp
 from cvxpy.reductions.solvers.solver import Solver
 from cvxpy.settings import (
     CLARABEL,
