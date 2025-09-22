@@ -60,16 +60,14 @@ class smooth_abs(Elementwise):
     def is_incr(self, idx) -> bool:
         """Is the composition non-decreasing in argument idx?
         """
-        print("CRASHING HERE")
         raise NotImplementedError()
-        return self.args[idx].is_nonneg()
+        
 
     def is_decr(self, idx) -> bool:
         """Is the composition non-increasing in argument idx?
         """
-        print("CRASHING HERE")
         raise NotImplementedError()
-        return self.args[idx].is_nonpos()
+        
 
     def _grad(self, values):
         """Gives the (sub/super)gradient of the atom w.r.t. each argument.
@@ -100,11 +98,7 @@ class smooth_abs(Elementwise):
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.
         """
-        print("CRASHING HERE")
         raise NotImplementedError()
-        return [self.args[0] >= 0]
     
     def point_in_domain(self):
-        print("CRASHING HERE")
         raise NotImplementedError()
-        return np.zeros(self.shape)
