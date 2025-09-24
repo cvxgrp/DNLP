@@ -51,8 +51,8 @@ class TestHessVecRelativeEntropy():
         result_dict = rel_entr.hess_vec(vec)
 
         H_computed = np.block([
-            [result_dict[(x, x)], result_dict[(x, y)]],
-            [result_dict[(y, x)], result_dict[(y, y)]]
+            [result_dict[(x, x)].toarray(), result_dict[(x, y)].toarray()],
+            [result_dict[(y, x)].toarray(), result_dict[(y, y)].toarray()]
         ])
 
         # compute Hessian manually
@@ -148,7 +148,3 @@ class TestHessVecRelativeEntropy():
         H[1:, 1:] = np.diag(vec * x / (y**2))
 
         assert(np.allclose(H_computed, H))
-
-
-
-

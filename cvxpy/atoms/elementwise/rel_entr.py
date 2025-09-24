@@ -123,15 +123,15 @@ class rel_entr(Elementwise):
         dxdy_vals = - vec / y.value
 
         if x.size == 1:
-            return {(x, x): sp.csr_array(np.sum(dx2_vals)),
+            return {(x, x): np.array(np.sum(dx2_vals)),
                     (y, y): sp.diags_array(dy2_vals),
-                    (x, y): sp.csr_array(dxdy_vals),
-                    (y, x): sp.csr_array(dxdy_vals)}
+                    (x, y): np.array(dxdy_vals),
+                    (y, x): np.array(dxdy_vals)}
         elif y.size == 1:
             return {(x, x): sp.diags_array(dx2_vals), 
-                    (y, y): sp.csr_array(np.sum(dy2_vals)),
-                    (x, y): sp.csr_array(dxdy_vals),
-                    (y, x): sp.csr_array(dxdy_vals)}
+                    (y, y): np.array(np.sum(dy2_vals)),
+                    (x, y): np.array(dxdy_vals),
+                    (y, x): np.array(dxdy_vals)}
         else:
             return {(x, x): sp.diags_array(dx2_vals), 
                     (y, y): sp.diags_array(dy2_vals),
