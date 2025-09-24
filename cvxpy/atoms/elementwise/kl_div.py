@@ -17,6 +17,7 @@ limitations under the License.
 from typing import List, Optional, Tuple
 
 import numpy as np
+import scipy.sparse as sp
 from scipy.sparse import csc_array
 from scipy.special import kl_div as kl_div_scipy
 
@@ -121,20 +122,20 @@ class kl_div(Elementwise):
         dxdy_vals = - vec / y.value
 
         if x.size == 1:
-            return {(x, x): np.array(np.sum(dx2_vals)),
-                    (y, y): np.diag(dy2_vals),
-                    (x, y): np.array(dxdy_vals),
-                    (y, x): np.array(dxdy_vals)}
+            return {(x, x): sp.csr_array(np.sum(dx2_vals)),
+                    (y, y): sp.diags_array(dy2_vals),
+                    (x, y): sp.csr_array(dxdy_vals),
+                    (y, x): sp.csr_array(dxdy_vals)}
         elif y.size == 1:
-            return {(x, x): np.diag(dx2_vals), 
-                    (y, y): np.array(np.sum(dy2_vals)),
-                    (x, y): np.array(dxdy_vals),
-                    (y, x): np.array(dxdy_vals)}
+            return {(x, x): sp.diags_array(dx2_vals), 
+                    (y, y): sp.csr_array(np.sum(dy2_vals)),
+                    (x, y): sp.csr_array(dxdy_vals),
+                    (y, x): sp.csr_array(dxdy_vals)}
         else:
-            return {(x, x): np.diag(dx2_vals), 
-                    (y, y): np.diag(dy2_vals),
-                    (x, y): np.diag(dxdy_vals),
-                    (y, x): np.diag(dxdy_vals)}
+            return {(x, x): sp.diags_array(dx2_vals), 
+                    (y, y): sp.diags_array(dy2_vals),
+                    (x, y): sp.diags_array(dxdy_vals),
+                    (y, x): sp.diags_array(dxdy_vals)}
     
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.

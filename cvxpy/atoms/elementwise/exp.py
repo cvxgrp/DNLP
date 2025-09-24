@@ -17,6 +17,7 @@ limitations under the License.
 from typing import Tuple
 
 import numpy as np
+import scipy.sparse as sp
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.expressions.variable import Variable
@@ -92,4 +93,4 @@ class exp(Elementwise):
     def _hess_vec(self, vec):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
-        return {(x, x): np.diag( np.exp(x.value) * vec)}
+        return {(x, x): sp.diags_array(np.exp(x.value) * vec)}

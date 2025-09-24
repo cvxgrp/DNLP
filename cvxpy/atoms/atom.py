@@ -482,7 +482,7 @@ class Atom(Expression):
         weight vector. The result is an n x n matrix representing this
         weighted combination of component Hessians.
 
-        It returns a dictionary with (var, var) as keys and 2D Numpy arrays
+        It returns a dictionary with (var, var) as keys and 2D Scipy sparse arrays
         as values.
 
         This function checks if the argument is affine, and if so returns an 
@@ -490,9 +490,9 @@ class Atom(Expression):
         It also performs some error checking, so this must not be implemented
         in the atom-specific _hess_vec.
 
-        TODO (DCED): we could check the domain here as well. Do we need that? 
-                     When we set bound_relax_factor = 0 to IPOPT we know that 
-                     it will always respect the domain of the functions (since 
+        TODO (DCED): we could check the domain here as well. Do we need that?
+                     When we set bound_relax_factor = 0 to IPOPT we know that
+                     it will always respect the domain of the functions (since
                      we always add bounds for the domains of the atoms)
                      Discuss with William.
         """

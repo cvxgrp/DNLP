@@ -16,6 +16,7 @@ limitations under the License.
 from typing import List, Tuple
 
 import numpy as np
+import scipy.sparse as sp
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.constraints.constraint import Constraint
@@ -98,7 +99,7 @@ class log(Elementwise):
     def _hess_vec(self, vec):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
-        return {(x, x): np.diag( -vec / (x.value ** 2))}
+        return {(x, x): sp.diags_array(-vec / (x.value ** 2))}
 
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.

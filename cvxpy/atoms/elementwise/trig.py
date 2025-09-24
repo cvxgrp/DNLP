@@ -16,6 +16,7 @@ limitations under the License.
 from typing import List, Tuple
 
 import numpy as np
+import scipy.sparse as sp
 
 from cvxpy.atoms.elementwise.elementwise import Elementwise
 from cvxpy.constraints.constraint import Constraint
@@ -94,7 +95,7 @@ class sin(Elementwise):
         """
         hess_dict = {}
         var = self.args[0]
-        hess_dict[(var, var)] = np.diag(-np.sin(var.value) * vec)
+        hess_dict[(var, var)] = sp.diags_array(-np.sin(var.value) * vec)
         return hess_dict
 
 class cos(Elementwise):
@@ -169,7 +170,7 @@ class cos(Elementwise):
         """
         hess_dict = {}
         var = self.args[0]
-        hess_dict[(var, var)] = np.diag(-np.cos(var.value) * vec)
+        hess_dict[(var, var)] = sp.diags_array(-np.cos(var.value) * vec)
         return hess_dict
 
 
@@ -245,5 +246,5 @@ class tan(Elementwise):
         """
         hess_dict = {}
         var = self.args[0]
-        hess_dict[(var, var)] = np.diag(2*np.tan(var.value)/np.cos(var.value)**2 * vec)
+        hess_dict[(var, var)] = sp.diags_array(2*np.tan(var.value)/np.cos(var.value)**2 * vec)
         return hess_dict

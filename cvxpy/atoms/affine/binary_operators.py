@@ -278,16 +278,16 @@ class MulExpression(BinaryOperator):
         if not isinstance(x, Variable) and x.is_affine():
             assert(type(x) == Promote)
             x_var = x.args[0] # here x is a Promote because of how we canonicalize
-            return {(x_var, y): vec, (y, x_var): vec}
+            return {(x_var, y): sp.csr_array(vec), (y, x_var): sp.csr_array(vec)}
         
         # x * y with x a vector variable, y a scalar
         if not isinstance(y, Variable) and y.is_affine():
             assert(type(y) == Promote)
             y_var = y.args[0] # here y is a Promote because of how we canonicalize
-            return {(x, y_var): vec, (y_var, x): vec}
+            return {(x, y_var): sp.csr_array(vec), (y_var, x): sp.csr_array(vec)}
         
         # if we arrive here both arguments are variables of the same size
-        return {(x, y): np.diag(vec), (y, x): np.diag(vec)}
+        return {(x, y): sp.diags_array(vec), (y, x): sp.diags_array(vec)}
 
     def graph_implementation(
         self, arg_objs, shape: Tuple[int, ...], data=None
@@ -445,16 +445,16 @@ class multiply(MulExpression):
         if not isinstance(x, Variable) and x.is_affine():
             assert(type(x) == Promote)
             x_var = x.args[0] # here x is a Promote because of how we canonicalize
-            return {(x_var, y): vec, (y, x_var): vec}
+            return {(x_var, y): sp.csr_array(vec), (y, x_var): sp.csr_array(vec)}
         
         # x * y with x a vector variable, y a scalar
         if not isinstance(y, Variable) and y.is_affine():
             assert(type(y) == Promote)
             y_var = y.args[0] # here y is a Promote because of how we canonicalize
-            return {(x, y_var): vec, (y_var, x): vec}
+            return {(x, y_var): sp.csr_array(vec), (y_var, x): sp.csr_array(vec)}
         
         # if we arrive here both arguments are variables of the same size
-        return {(x, y): np.diag(vec), (y, x): np.diag(vec)}
+        return {(x, y): sp.diags_array(vec), (y, x): sp.diags_array(vec)}
 
     def graph_implementation(
         self, arg_objs, shape: Tuple[int, ...], data=None
