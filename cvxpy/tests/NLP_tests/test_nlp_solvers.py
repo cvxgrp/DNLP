@@ -320,5 +320,5 @@ class TestCanonicalization():
         objective = cp.Minimize(-cp.sum(cp.log(b - A @ x)))
         problem = cp.Problem(objective, [])
         # Solve the problem
-        problem.solve(solver=cp.IPOPT, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True, hessian_approximation='exact')
         assert problem.status == cp.OPTIMAL

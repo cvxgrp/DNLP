@@ -122,6 +122,8 @@ class rel_entr(Elementwise):
         dy2_vals = vec * x.value / (y.value ** 2)
         dxdy_vals = - vec / y.value
 
+        # TODO handle the case where both are size 1 (scalar)
+        # then we should return everything as np.arrays?
         if x.size == 1:
             return {(x, x): np.array(np.sum(dx2_vals)),
                     (y, y): sp.diags_array(dy2_vals),

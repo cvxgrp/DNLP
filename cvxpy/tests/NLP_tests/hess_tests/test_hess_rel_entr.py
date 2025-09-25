@@ -80,7 +80,7 @@ class TestHessVecRelativeEntropy():
         result_dict = rel_entr.hess_vec(vec)
         H_computed = np.block([
             [result_dict[(x, x)].reshape(-1, 1), result_dict[(x, y)].reshape(1, -1)],
-            [result_dict[(y, x)].reshape(-1, 1), result_dict[(y, y)].reshape(-1, 1)]
+            [result_dict[(y, x)].reshape(-1, 1), result_dict[(y, y)].toarray().reshape(-1, 1)]
         ])
 
         H_analytic = np.array([[vec[0] / x.value[0], - vec[0] / y.value[0]],
@@ -102,7 +102,7 @@ class TestHessVecRelativeEntropy():
         result_dict = rel_entr.hess_vec(vec)
 
         H_computed = np.block([
-            [result_dict[(x, x)], result_dict[(x, y)].reshape(-1, 1)],
+            [result_dict[(x, x)].toarray(), result_dict[(x, y)].reshape(-1, 1)],
             [result_dict[(y, x)].reshape(1, -1), result_dict[(y, y)].reshape(-1, 1)]
         ])
 
@@ -134,7 +134,7 @@ class TestHessVecRelativeEntropy():
 
         H_computed = np.block([
             [result_dict[(x, x)].reshape(-1, 1), result_dict[(x, y)].reshape(1, -1)],
-            [result_dict[(y, x)].reshape(-1, 1), result_dict[(y, y)]]
+            [result_dict[(y, x)].reshape(-1, 1), result_dict[(y, y)].toarray()]
         ])
 
         # compute Hessian manually
