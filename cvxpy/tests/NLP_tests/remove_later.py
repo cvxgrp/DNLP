@@ -1,19 +1,21 @@
+import numpy as np
+
 import cvxpy as cp
 
-# Define variables
-x = cp.Variable(3)
-y = cp.Variable()
+n = 100
+Sigma = np.random.rand(n, n)
+Sigma = Sigma @ Sigma.T  
+mu = np.random.rand(n, )
 
-# Define objective function
-objective = cp.Minimize(3 * x[0] + 2 * x[1] + x[2])
+x = cp.Variable((n, ), nonneg=True)
 
-# Define constraints
-constraints = [
-    cp.norm(x, 2) <= y,
-    x[0] + x[1] + 3*x[2] >= 1.0,
-    y <= 5
-]
+# This type of initialization makes ipopt muich more robust.
+# With no initialization it sometimes fails. Perhaps this is 
+# because we initialize in a very infeasible point?
+x.value = np.ones(n) / n
 
-# Create and solve the problem
-problem = cp.Problem(objective, constraints)
-problem.solve(solver=cp.IPOPT, nlp=True)
+obj = cp.square(mu @ x) / cp.quad_form(x, Sigma)
+constraints = [cp.sum(x) == 1]
+problem = cp.Problem(cp.Maximize(obj), constraints)
+problem.solve(solver=cp.IPOPT, nlp=True, verbose=True, hessian_approximation='exact', derivative_test='second-order')
+x_noncvx = x.value

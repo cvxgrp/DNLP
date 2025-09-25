@@ -173,8 +173,6 @@ class IPOPT(NLPsolver):
         #print("computing manual dual LS...")
         #lmbda_temp = self.dual_LS_manual(x0, oracles, bounds)
         #lmbda_temp = lmbda_temp[len(x0):]
-        
-
         _, info = nlp.solve(x0)#, lagrange=lmbda_temp)
         # add number of iterations to info dict from oracles
         info['iterations'] = oracles.iterations
@@ -207,7 +205,6 @@ class IPOPT(NLPsolver):
         rhs = np.concatenate([rhs, np.zeros(len(bounds.cl))])
         sol = np.linalg.lstsq(LS_matrix, rhs, rcond=None)[0]
         return sol
-
 
     # TODO (DCED): Ask WZ where to put this.
     def construct_initial_point(self, bounds):
@@ -354,6 +351,50 @@ class IPOPT(NLPsolver):
                 self.jacobian_idxs[constraint] = constraint_jac
             return (np.array(rows), np.array(cols))
 
+        def hessian(self, x, duals, obj_factor):
+            """Returns only the non-zero values of the Hessian."""
+            # Set variable values
+            self.set_variable_value(x)
+            
+            # Get the total number of non-zero entries
+            values = np.zeros(self.hessian_nnz)
+
+            def parse_sparse_hess_dict(hess_dict, values, expr):
+                """
+                Adds the contribution of blocks defined in hess_dict 
+                to the sparse values array.
+                """
+                row_offset = 0
+                for var1 in self.main_var:
+                    col_offset = 0
+                    for var2 in self.main_var:
+                        if (var1, var2) in hess_dict and (var1, var2) in self.hessian_idxs[expr]:
+                            rows, cols, positions = self.hessian_idxs[expr][(var1, var2)]
+                            var_hess = hess_dict[(var1, var2)]
+                            if sp.issparse(var_hess):
+                                var_hess = sp.dok_matrix(var_hess)
+                                for i, (r, c) in enumerate(zip(rows, cols)):
+                                    if r + row_offset >= c + col_offset:
+                                        values[positions[i]] += var_hess.get((r, c), 0)
+                            else:
+                                # Dense case - single element
+                                values[positions[0]] += var_hess
+                        col_offset += var2.size
+                    row_offset += var1.size
+
+            # Add objective contribution
+            obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([obj_factor]))
+            parse_sparse_hess_dict(obj_hess_dict, values, 'objective')
+
+            # Add constraint contributions
+            constr_offset = 0
+            for constraint in self.problem.constraints:
+                multipliers = duals[constr_offset:constr_offset + constraint.size]
+                constraint_hess_dict = constraint.expr.hess_vec(multipliers)
+                parse_sparse_hess_dict(constraint_hess_dict, values, constraint)
+                constr_offset += constraint.size
+            return values
+
         def hessianstructure(self):
             """Returns the sparsity structure of the Hessian."""
             # this dict stores the hessian for each expression for each pair of variables
@@ -386,21 +427,23 @@ class IPOPT(NLPsolver):
                             hessian = hess_dict[(var1, var2)]
                             if sp.issparse(hessian):
                                 hessian = hessian.tocoo()
-                                local_rows = hessian.row + row_offset
-                                local_cols = hessian.col + col_offset
-                                # Store positions for this (var1, var2) block
-                                positions = []
-                                for r, c in zip(local_rows, local_cols):
-                                    # Only store lower triangular entries (r >= c)
-                                    if r >= c:
-                                        key = (r, c)
-                                        # if this is a new index, add to map and list
-                                        if key not in position_map:
-                                            position_map[key] = len(all_positions)
-                                            all_positions.append(key)
-                                        # Store the position index
-                                        positions.append(position_map[key])
-                                hess_idxs[(var1, var2)] = (hessian.row, hessian.col, positions)
+                                global_rows = hessian.row + row_offset
+                                global_cols = hessian.col + col_offset
+                                # check if this block is lower triangular
+                                if any(global_rows >= global_cols):
+                                    # Store positions for this (var1, var2) block
+                                    positions = []
+                                    for r, c in zip(hessian.row, hessian.col):
+                                        # only store lower triangular indices
+                                        if r + row_offset >= c + col_offset:
+                                            key = (r, c)
+                                            # if this is a new index, add to map and list
+                                            if key not in position_map:
+                                                position_map[key] = len(all_positions)
+                                                all_positions.append(key)
+                                            # Store the position index
+                                            positions.append(position_map[key])
+                                    hess_idxs[(var1, var2)] = (hessian.row, hessian.col, positions)
                             else:
                                 # Dense case - single element
                                 r, c = row_offset, col_offset
@@ -413,62 +456,21 @@ class IPOPT(NLPsolver):
                         col_offset += var2.size
                     row_offset += var1.size
                 self.hessian_idxs[expr] = hess_idxs
-            
-            # Process objective
+
+            # process objective
             obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([1.0]))
             process_hess_dict(obj_hess_dict, 'objective')
-            
-            # Process constraints
+
+            # process constraints
             for constraint in self.problem.constraints:
                 hess_dict = constraint.expr.hess_vec(np.ones(constraint.size))
                 process_hess_dict(hess_dict, constraint)
-            
+
             # store the total number of non-zero entries
             self.hessian_nnz = len(all_positions)
             # Convert to arrays
             rows, cols = zip(*all_positions) if all_positions else ([], [])
             return (np.array(rows), np.array(cols))
-
-        def hessian(self, x, duals, obj_factor):
-            """Returns only the non-zero values of the Hessian."""
-            # Set variable values
-            self.set_variable_value(x)
-            
-            # Get the total number of non-zero entries
-            values = np.zeros(self.hessian_nnz)
-
-            def parse_sparse_hess_dict(hess_dict, values, expr):
-                """
-                Adds the contribution of blocks defined in hess_dict 
-                to the sparse values array.
-                """
-                for var1 in self.main_var:
-                    for var2 in self.main_var:
-                        if (var1, var2) in hess_dict and (var1, var2) in self.hessian_idxs[expr]:
-                            rows, cols, positions = self.hessian_idxs[expr][(var1, var2)]
-                            var_hess = hess_dict[(var1, var2)]
-                            
-                            if sp.issparse(var_hess):
-                                var_hess = sp.dok_matrix(var_hess)
-                                for i, (r, c) in enumerate(zip(rows, cols)):
-                                    values[positions[i]] += var_hess.get((r, c), 0)
-                            else:
-                                # Dense case - single element
-                                values[positions[0]] += var_hess
-
-            # Add objective contribution
-            obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([obj_factor]))
-            parse_sparse_hess_dict(obj_hess_dict, values, 'objective')
-
-            # Add constraint contributions
-            constr_offset = 0
-            for constraint in self.problem.constraints:
-                duals = duals[constr_offset:constr_offset + constraint.size]
-                constraint_hess_dict = constraint.expr.hess_vec(duals)
-                parse_sparse_hess_dict(constraint_hess_dict, values, constraint)
-                constr_offset += constraint.size
-            
-            return values
 
         def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,
                         d_norm, regularization_size, alpha_du, alpha_pr,

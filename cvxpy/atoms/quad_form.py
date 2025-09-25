@@ -140,7 +140,7 @@ class QuadForm(Atom):
         hess_dict = {}
         var = self.args[0]
         Q = self.args[1]
-        hess_dict[(var, var)] = vec * 2 * Q.value
+        hess_dict[(var, var)] = vec * 2 * sp.csr_array(Q.value)
         return hess_dict
 
     def shape_from_args(self) -> Tuple[int, ...]:
@@ -196,7 +196,7 @@ class SymbolicQuadForm(Atom):
         hess_dict = {}
         var = self.args[0]
         Q = self.args[1]
-        hess_dict[(var, var)] = vec * 2 * Q.value
+        hess_dict[(var, var)] = vec * 2 * sp.csr_array(Q.value)
         return hess_dict
 
 
