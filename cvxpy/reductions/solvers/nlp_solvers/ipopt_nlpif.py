@@ -368,7 +368,7 @@ class IPOPT(NLPsolver):
                 for var1 in self.main_var:
                     col_offset = 0
                     for var2 in self.main_var:
-                        if (var1, var2) in hess_dict and (var1, var2) in self.hessian_idxs[expr]:
+                        if (var1, var2) in hess_dict:
                             rows, cols, positions = self.hessian_idxs[expr][(var1, var2)]
                             var_hess = hess_dict[(var1, var2)]
                             if sp.issparse(var_hess):
@@ -433,9 +433,9 @@ class IPOPT(NLPsolver):
                                 if any(global_rows >= global_cols):
                                     # Store positions for this (var1, var2) block
                                     positions = []
-                                    for r, c in zip(hessian.row, hessian.col):
+                                    for r, c in zip(global_rows, global_cols):
                                         # only store lower triangular indices
-                                        if r + row_offset >= c + col_offset:
+                                        if r >= c:
                                             key = (r, c)
                                             # if this is a new index, add to map and list
                                             if key not in position_map:
