@@ -122,20 +122,28 @@ class rel_entr(Elementwise):
         dxdy_vals = - vec / y.value
 
         if x.size == 1:
-            return {(x, x): np.array(np.sum(dx2_vals)),
-                    (y, y): np.diag(dy2_vals),
-                    (x, y): np.array(dxdy_vals),
-                    (y, x): np.array(dxdy_vals)}
+            rows_y = np.arange(y.size)
+            cols_y = np.arange(y.size)
+            zeros_y = np.zeros(y.size, dtype=int)
+            return {(x, x): (0, 0, np.sum(dx2_vals)),
+                    (y, y): (rows_y, cols_y, dy2_vals),
+                    (x, y): (zeros_y, cols_y, dxdy_vals),
+                    (y, x): (rows_y, zeros_y, dxdy_vals)}
         elif y.size == 1:
-            return {(x, x): np.diag(dx2_vals), 
-                    (y, y): np.array(np.sum(dy2_vals)),
-                    (x, y): np.array(dxdy_vals),
-                    (y, x): np.array(dxdy_vals)}
+            rows_x = np.arange(x.size)
+            cols_x = np.arange(x.size)
+            zeros_x = np.zeros(x.size, dtype=int)
+            return {(x, x): (rows_x, cols_x, dx2_vals), 
+                    (y, y): (0, 0, np.sum(dy2_vals)),
+                    (x, y): (rows_x, zeros_x, dxdy_vals),
+                    (y, x): (zeros_x, cols_x, dxdy_vals)}
         else:
-            return {(x, x): np.diag(dx2_vals), 
-                    (y, y): np.diag(dy2_vals),
-                    (x, y): np.diag(dxdy_vals),
-                    (y, x): np.diag(dxdy_vals)}
+            rows = np.arange(x.size)
+            cols = np.arange(x.size)
+            return {(x, x): (rows, cols, dx2_vals), 
+                    (y, y): (rows, cols, dy2_vals),
+                    (x, y): (rows, cols, dxdy_vals),
+                    (y, x): (rows, cols, dxdy_vals)}
 
     def _domain(self):
         """Returns constraints describing the domain of the node.

@@ -94,6 +94,10 @@ class sin(Elementwise):
         """
         hess_dict = {}
         var = self.args[0]
+        rows = np.arange(var.size)
+        cols = np.arange(var.size)
+        vals = -np.sin(var.value) * vec
+        return {(var, var): (rows, cols, vals)}
         hess_dict[(var, var)] = np.diag(-np.sin(var.value) * vec)
         return hess_dict
 
@@ -169,6 +173,10 @@ class cos(Elementwise):
         """
         hess_dict = {}
         var = self.args[0]
+        rows = np.arange(var.size)
+        cols = np.arange(var.size)
+        vals = -np.cos(var.value) * vec
+        return {(var, var): (rows, cols, vals)}
         hess_dict[(var, var)] = np.diag(-np.cos(var.value) * vec)
         return hess_dict
 

@@ -98,7 +98,11 @@ class log(Elementwise):
     def _hess_vec(self, vec):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
-        return {(x, x): np.diag( -vec / (x.value ** 2))}
+        rows = np.arange(x.size)
+        cols = np.arange(x.size)
+        vals = -vec / (x.value ** 2)
+        return {(x, x): (rows, cols, vals)}
+        #return {(x, x): np.diag( -vec / (x.value ** 2))}
 
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.

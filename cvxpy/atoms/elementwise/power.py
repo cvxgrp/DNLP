@@ -403,6 +403,12 @@ class power(Elementwise):
     
         x = self.args[0]
         hess_vals = float(p)*float(p-1)*np.power(x.value, float(p)-2)
+
+        rows = np.arange(x.size)
+        cols = np.arange(x.size)
+        vals = hess_vals * vec
+        return {(x, x): (rows, cols, vals)}
+
         return {(x, x): np.diag(hess_vals * vec)}
         
     def _domain(self) -> List[Constraint]:
