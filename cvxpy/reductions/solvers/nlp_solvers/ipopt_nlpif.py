@@ -388,7 +388,7 @@ class IPOPT(NLPsolver):
                 constr_offset += constraint.size
             
             sparse = sp.coo_array(
-                (np.ones(self.hessian_nnz), (self.hess_rows, self.hess_cols)),
+                (values, (self.hess_rows, self.hess_cols)),
                 shape=(len(self.initial_point), len(self.initial_point))
             )
             lower_csr = sp.tril(sparse.tocsr())
@@ -400,7 +400,7 @@ class IPOPT(NLPsolver):
             # this dict stores the hessian for each expression for each pair of variables
             # it has the following structure:
             # {expr: {(var1, var2): (rows, cols)} }
-            self.hessian_idxs = {}
+            self.hessian_idxs = dict()
             hess_rows, hess_cols = [], []
             # Set values to nans for full hessian structure
             for var in self.main_var:
@@ -411,6 +411,7 @@ class IPOPT(NLPsolver):
             
             def process_hess_dict(hess_dict, expr):
                 """Process a hessian dictionary and update position mappings."""
+                self.hessian_idxs[expr] = {}
                 row_offset = 0
                 for var1 in self.main_var:
                     col_offset = 0
@@ -420,11 +421,11 @@ class IPOPT(NLPsolver):
                             if sp.issparse(hessian):
                                 hessian = hessian.tocoo().toarray()
                             rows, cols = np.nonzero(hessian)
+                            self.hessian_idxs[expr][(var1, var2)] = (rows, cols)
                             hess_rows.extend(rows + row_offset)
                             hess_cols.extend(cols + col_offset)
                         col_offset += var2.size
                     row_offset += var1.size
-                self.hessian_idxs[expr] = (rows, cols)
 
             # process objective
             obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([1.0]))
@@ -434,6 +435,7 @@ class IPOPT(NLPsolver):
             for constraint in self.problem.constraints:
                 hess_dict = constraint.expr.hess_vec(np.ones(constraint.size))
                 process_hess_dict(hess_dict, constraint)
+
             self.hessian_nnz = len(hess_rows)
             self.hess_rows = hess_rows
             self.hess_cols = hess_cols
@@ -443,7 +445,8 @@ class IPOPT(NLPsolver):
             )
             lower_csr = sp.tril(sparse.tocsr())
             coo = lower_csr.tocoo()
-            return (coo.rows, coo.cols)
+            print("reached end of hessianstructure")
+            return (coo.row, coo.col)
 
         def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,
                         d_norm, regularization_size, alpha_du, alpha_pr,

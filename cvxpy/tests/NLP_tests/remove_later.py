@@ -17,5 +17,8 @@ x.value = np.ones(n) / n
 obj = cp.square(mu @ x) / cp.quad_form(x, Sigma)
 constraints = [cp.sum(x) == 1]
 problem = cp.Problem(cp.Maximize(obj), constraints)
-problem.solve(solver=cp.IPOPT, nlp=True, verbose=True, hessian_approximation='exact', derivative_test='second-order')
+problem.solve(
+	solver=cp.IPOPT, nlp=True, verbose=True, 
+	hessian_approximation='exact', derivative_test='second-order'
+)
 x_noncvx = x.value
