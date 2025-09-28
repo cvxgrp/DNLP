@@ -450,7 +450,8 @@ class multiply(MulExpression):
             x_var = x.args[0] # here x is a Promote because of how we canonicalize
             zeros_x = np.zeros(x_var.size, dtype=int)
             cols = np.arange(y.size)
-            return {(x_var, y): (zeros_x, cols, vec), (y, x_var): (cols, zeros_x, vec)}
+            return {(x_var, y): (zeros_x, cols, vec),
+                    (y, x_var): (cols, zeros_x, vec)}
         
         # x * y with x a vector variable, y a scalar
         if not isinstance(y, Variable) and y.is_affine():
@@ -458,7 +459,8 @@ class multiply(MulExpression):
             y_var = y.args[0] # here y is a Promote because of how we canonicalize
             zeros_y = np.zeros(y_var.size, dtype=int)
             cols = np.arange(x.size)
-            return {(x, y_var): (cols, zeros_y, vec), (y_var, x): (zeros_y, cols, vec)}
+            return {(x, y_var): (cols, zeros_y, vec),
+                    (y_var, x): (zeros_y, cols, vec)}
         
         # if we arrive here both arguments are variables of the same size
         rows = np.arange(x.size)
