@@ -136,6 +136,7 @@ class Sum(AxisAtom, AffAtom):
     def _verify_jacobian_args(self):
         # we assume that we sum a vector to a scalar
         return (self.size == 1)
+    
     def _jacobian(self):
         
         jac_dict = self.args[0].jacobian()

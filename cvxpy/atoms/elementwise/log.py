@@ -94,7 +94,7 @@ class log(Elementwise):
             
     def _verify_hess_vec_args(self):
         return isinstance(self.args[0], Variable)
-
+    
     def _hess_vec(self, vec):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
@@ -102,6 +102,9 @@ class log(Elementwise):
         vals = -vec / (x.value ** 2)
         return {(x, x): (idxs, idxs, vals)}
     
+    def _verify_jacobian_args(self):
+        return isinstance(self.args[0], Variable)
+
     def _jacobian(self):
         x = self.args[0]
         idxs = np.arange(x.size)

@@ -244,4 +244,3 @@ class special_index(AffAtom):
         e = np.zeros(self.args[0].size)
         e[idx] = vec
         return self.args[0].hess_vec(e)
- 

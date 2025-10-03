@@ -184,6 +184,9 @@ class AddExpression(AffAtom):
 
         return hess_dict
 
+    def _verify_jacobian_args(self):
+        return True
+
     def _jacobian(self):
         jacobian_dict = {}
         keys_require_summing = []

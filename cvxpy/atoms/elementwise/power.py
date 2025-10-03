@@ -408,6 +408,15 @@ class power(Elementwise):
         vals = hess_vals * vec
         return {(x, x): (idxs, idxs, vals)}
     
+    def _verify_jacobian_args(self):
+        if (self.p_rational is None and self.p.value is None):
+            return False
+
+        if not isinstance(self.args[0], Variable):
+            return False
+        
+        return True
+
     def _jacobian(self):
         if self.p_rational is not None:
             p = self.p_rational

@@ -153,7 +153,6 @@ class QuadForm(Atom):
         return {x: (np.zeros(x.size, dtype=int), np.arange(x.size), 
                     vals)}
 
-
     def shape_from_args(self) -> Tuple[int, ...]:
         return tuple()
 

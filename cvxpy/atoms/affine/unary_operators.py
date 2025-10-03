@@ -123,6 +123,9 @@ class NegExpression(UnaryOperator):
         """ See the docstring of the hess_vec method of the atom class. """
         return self.args[0].hess_vec(-vec)
     
+    def _verify_jacobian_args(self):
+        return True
+
     def _jacobian(self):
         jacobian_dict = self.args[0].jacobian()
         

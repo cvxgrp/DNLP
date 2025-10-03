@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 
-from time import time
 
 import numpy as np
 import scipy.sparse as sp
@@ -253,16 +252,13 @@ class IPOPT(NLPsolver):
                 offset += size
 
         def objective(self, x):
-            start = time()
             """Returns the scalar value of the objective given x."""
             self.set_variable_value(x)
             obj_value = self.problem.objective.args[0].value
-            self.time_objective += time() - start
             return obj_value
         
         def gradient(self, x):
             """Returns the gradient of the objective with respect to x."""
-            start = time()
             self.set_variable_value(x)
 
             # fill with zeros to reset from previous call
@@ -278,18 +274,17 @@ class IPOPT(NLPsolver):
                         array = array.toarray().flatten(order='F')
                     self.grad_obj[grad_offset:grad_offset+size] = array
                 grad_offset += size
-            self.time_gradient += time() - start
+
             return self.grad_obj
 
         def constraints(self, x):
-            start = time()
             """Returns the constraint values."""
             self.set_variable_value(x)
             # Evaluate all constraints
             constraint_values = []
             for constraint in self.problem.constraints:
                 constraint_values.append(np.asarray(constraint.args[0].value).flatten(order='F'))
-            self.time_constraints += time() - start
+            
             return np.concatenate(constraint_values)
 
         def parse_jacobian_dict(self, grad_dict, constr_offset, is_affine):
@@ -316,7 +311,7 @@ class IPOPT(NLPsolver):
         def insert_missing_zeros_jacobian(self):
             rows, cols, vals = self.jacobian_coo
             rows_true, cols_true = self.jacobian_coo_rows_cols
-            if (not self.permutation_needed):
+            if not self.permutation_needed:
                 return vals
             dim = self.initial_point.size
             m = self.num_constraints
@@ -325,7 +320,6 @@ class IPOPT(NLPsolver):
             return vals_true
 
         def jacobian(self, x):
-            start = time()
             self.set_variable_value(x)
         
             # reset previous call
@@ -355,7 +349,6 @@ class IPOPT(NLPsolver):
             else:
                 vals = self.jacobian_coo[2]
         
-            self.time_jacobian += time() - start
             return vals
             
         def jacobianstructure(self):
@@ -421,8 +414,7 @@ class IPOPT(NLPsolver):
             vals_true = H[rows_true, cols_true].data
             return vals_true
 
-        def hessianstructure(self):   
-            start = time()         
+        def hessianstructure(self):            
             # if we have already computed the sparsity structure, return it
             # (Ipopt only calls this function once, so this if is not strictly
             #  necessary)
@@ -440,11 +432,9 @@ class IPOPT(NLPsolver):
             rows = rows[mask]
             cols = cols[mask]
             self.hess_lagrangian_coo_rows_cols = (rows, cols)
-            self.time_hessian_structure += time() - start
             return self.hess_lagrangian_coo_rows_cols
             
         def hessian(self, x, duals, obj_factor):
-            start_hessian_timer = time()
             self.set_variable_value(x)
             
             # reset previous call
@@ -463,21 +453,15 @@ class IPOPT(NLPsolver):
                 constr_offset += constraint.size
 
             # merge duplicate entries together
-            start = time()
             self.sum_coo()
-            self.time_sum_coo += time() - start
 
             # insert missing zeros (ie., entries that turned out to be zero but are not 
             # structurally zero)
-            start = time()
             if self.has_computed_hess_sparsity:
                 vals = self.insert_missing_zeros_hessian()
             else:
                 vals = self.hess_lagrangian_coo[2]
             
-            self.time_insert_zeros += time() - start
-            
-            self.time_hessian_values += time() - start_hessian_timer
             return vals
 
         def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,

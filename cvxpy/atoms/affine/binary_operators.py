@@ -478,11 +478,8 @@ class multiply(MulExpression):
         return {(x, y): (rows, cols, vec), (y, x): (rows, cols, vec)}
 
     def _verify_jacobian_args(self):
-        x = self.args[0]
-        y = self.args[1]
-        return (not (x.is_constant() and y.is_constant()))
+        return self._verify_hess_vec_args()
 
-    # todo: does this work for args of different dimensions?
     def _jacobian(self):
         x = self.args[0]
         y = self.args[1]

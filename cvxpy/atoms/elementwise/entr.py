@@ -100,6 +100,9 @@ class entr(Elementwise):
         vals = -vec / x.value
         return {(x, x): (idxs, idxs, vals)}
 
+    def _verify_jacobian_args(self):
+        return isinstance(self.args[0], Variable)
+
     def _jacobian(self):
         x = self.args[0]
         idxs = np.arange(x.size)
