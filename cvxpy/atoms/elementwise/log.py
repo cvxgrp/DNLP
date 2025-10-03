@@ -101,6 +101,12 @@ class log(Elementwise):
         idxs = np.arange(x.size)
         vals = -vec / (x.value ** 2)
         return {(x, x): (idxs, idxs, vals)}
+    
+    def _jacobian(self):
+        x = self.args[0]
+        idxs = np.arange(x.size)
+        vals = 1.0 / x.value
+        return {x: (idxs, idxs, vals)}
 
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.

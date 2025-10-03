@@ -95,3 +95,9 @@ class exp(Elementwise):
         idxs = np.arange(x.size)
         vals = np.exp(x.value) * vec
         return {(x, x): (idxs, idxs, vals)}
+    
+    def _jacobian(self):
+        x = self.args[0]
+        idxs = np.arange(x.size)
+        vals = np.exp(x.value)
+        return {x: (idxs, idxs, vals)}

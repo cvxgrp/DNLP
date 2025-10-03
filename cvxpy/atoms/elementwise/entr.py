@@ -100,6 +100,12 @@ class entr(Elementwise):
         vals = -vec / x.value
         return {(x, x): (idxs, idxs, vals)}
 
+    def _jacobian(self):
+        x = self.args[0]
+        idxs = np.arange(x.size)
+        vals = -np.log(x.value) - 1
+        return {x: (idxs, idxs, vals)}
+
     def _domain(self) -> List[Constraint]:
         """Returns constraints describing the domain of the node.
         """
