@@ -13,9 +13,7 @@ class TestJacVecElementwiseUnivariate():
         result_dict = log.jacobian()
         correct_jacobian = np.diag([1/(1.0), 1/(2.0), 1/(3.0)])
         computed_jacobian = np.zeros((n, n))
-        rows = result_dict[x][0]
-        cols = result_dict[x][1]
-        vals = result_dict[x][2]
+        rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
@@ -33,9 +31,7 @@ class TestJacVecElementwiseUnivariate():
         result_dict = exp.jacobian()
         correct_jacobian = np.diag([np.exp(1.0), np.exp(2.0), np.exp(3.0)])
         computed_jacobian = np.zeros((n, n))
-        rows = result_dict[x][0]
-        cols = result_dict[x][1]
-        vals = result_dict[x][2]
+        rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
@@ -53,9 +49,7 @@ class TestJacVecElementwiseUnivariate():
         result_dict = entr.jacobian()
         correct_jacobian = -np.diag(np.log(x.value) + 1)
         computed_jacobian = np.zeros((n, n))
-        rows = result_dict[x][0]
-        cols = result_dict[x][1]
-        vals = result_dict[x][2]
+        rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
@@ -73,9 +67,7 @@ class TestJacVecElementwiseUnivariate():
         result_dict = square.jacobian()
         correct_matrix = np.diag([ 2.0, 4.0, 6.0])
         computed_jacobian = np.zeros((n, n))
-        rows = result_dict[x][0]
-        cols = result_dict[x][1]
-        vals = result_dict[x][2]
+        rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_matrix))
 
@@ -93,9 +85,7 @@ class TestJacVecElementwiseUnivariate():
         result_dict = power.jacobian()
         correct_jacobian = np.diag([ 3.0*(1.0**2), 3.0*(2.0**2), 3.0*(3.0**2)])
         computed_jacobian = np.zeros((n, n))
-        rows = result_dict[x][0]
-        cols = result_dict[x][1]
-        vals = result_dict[x][2]
+        rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
@@ -104,5 +94,3 @@ class TestJacVecElementwiseUnivariate():
         power = cp.power(x, 3)
         result_dict = power.jacobian()
         assert(result_dict == {})
-
-
