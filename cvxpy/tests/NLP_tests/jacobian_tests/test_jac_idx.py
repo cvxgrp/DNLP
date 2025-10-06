@@ -49,7 +49,7 @@ class TestJacobianIndex():
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
-    pytest.mark.skip(reason="Boolean indexing not yet supported")
+    @pytest.mark.xfail(reason="Boolean indexing not yet supported")
     def test_jacobian_special_idx(self):
         n = 4
         x = cp.Variable((n,), name='x')
@@ -80,7 +80,7 @@ class TestJacobianIndex():
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
-    pytest.mark.skip(reason="Boolean indexing not yet supported")
+    @pytest.mark.xfail(reason="Boolean indexing not yet supported")
     def test_jacobian_matrix_special_idx(self):
         n = 2
         x = cp.Variable((n, n), name='x')
@@ -95,7 +95,7 @@ class TestJacobianIndex():
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
-    pytest.mark.skip(reason="List indexing not yet supported for matrices")
+    @pytest.mark.xfail(reason="List indexing not yet supported for matrices")
     def test_jacobian_matrix_list_idx(self):
         n = 2
         x = cp.Variable((n, n), name='x')
