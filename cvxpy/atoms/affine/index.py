@@ -130,7 +130,7 @@ class index(AffAtom):
         if len(indices) == 1:
             idx = indices[0]
         elif len(indices) == 2:
-            idx = np.add.outer(indices[0], indices[1] * self.shape[0]).flatten(order="F")
+            idx = np.add.outer(indices[0], indices[1] * self.args[0].shape[0]).flatten(order="F")
 
         row_map = {val: i for i, val in enumerate(idx)}
         for k in jacobian_dict:
