@@ -14,14 +14,14 @@ c = 0.5 * np.sqrt(g_0 * h_0)  # Thrust-to-fuel mass
 D_c = 0.5 * 620 * m_0 / g_0  # Drag scaling
 u_t_max = 3.5 * g_0 * m_0    # Maximum thrust
 T_max = 0.2                  # Number of seconds
-T = 100                     # Number of time steps
+T = 250                  # Number of time steps
 dt = 0.2 / T                 # Time per discretized step
 
 # Create variables with bounds
 x_v = cp.Variable(T, nonneg=True, name="velocity")  # Velocity >= 0
 x_h = cp.Variable(T, nonneg=True, name="height")  # Height >= 0
-x_m = cp.Variable(T, name="mass")               # Mass (lower bound added as constraint)
-u_t = cp.Variable(T, name="thrust")               # Thrust (bounds added as constraints)
+x_m = cp.Variable(T, bounds=[m_T, None], name="mass") # Mass (lower bound added as constraint)
+u_t = cp.Variable(T, bounds=[0, u_t_max], name="thrust")  # Thrust (bounds added as constraints)
 
 # Set initial values (warm start) for the variables
 # In CVXPY, we set these values before solving
@@ -45,8 +45,8 @@ constraints += [
 ]
 
 # Variable bounds
-constraints += [x_m >= m_T]                    # Mass lower bound
-constraints += [u_t >= 0, u_t <= u_t_max]      # Thrust bounds
+#constraints += [x_m >= m_T]                    # Mass lower bound
+#constraints += [u_t >= 0, u_t <= u_t_max]      # Thrust bounds
 
 # Dynamical equations using vectorized constraints
 # Note: We use indices [1:T] for current time and [0:T-1] for previous time
@@ -88,7 +88,7 @@ problem = cp.Problem(objective, constraints)
 # Note: You need to have IPOPT installed and accessible through CVXPY
 # The warm_start parameter tells the solver to use the initial values we set
 
-result = problem.solve(solver=cp.IPOPT, verbose=False, nlp=True)
+result = problem.solve(solver=cp.IPOPT, verbose=True, nlp=True, derivative_test='none')
 solver_used = "IPOPT"
 
 print(f"Solver used: {solver_used}")
