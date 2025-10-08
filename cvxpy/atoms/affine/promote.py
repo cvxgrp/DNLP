@@ -125,7 +125,7 @@ class Promote(AffAtom):
         return (self.args[0].size == 1)
 
     def _jacobian(self):
-        jacobian_dict = self.args[0]._jacobian()
+        jacobian_dict = self.args[0].jacobian()
         size = self.size
     
         for k in jacobian_dict:

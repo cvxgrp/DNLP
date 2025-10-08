@@ -18,10 +18,10 @@ T = 2                        # Number of time steps
 dt = 0.2 / T                 # Time per discretized step
 
 # Create variables
-x_v = cp.Variable(T, bounds=[0, np.inf])  # Velocity
-x_h = cp.Variable(T, bounds=[0, np.inf])  # Height  
-x_m = cp.Variable(T)                      # Mass
-u_t = cp.Variable(T, bounds=[0, u_t_max]) # Thrust
+x_v = cp.Variable(T, bounds=[0, np.inf], name="velocity")  # Velocity
+x_h = cp.Variable(T, bounds=[0, np.inf], name="height")  # Height
+x_m = cp.Variable(T, name="mass")                      # Mass
+u_t = cp.Variable(T, bounds=[0, u_t_max], name="thrust") # Thrust
 
 # Set starting values (equivalent to JuMP's start parameter)
 x_v.value = np.full(T, v_0)        # start = v_0
@@ -44,26 +44,38 @@ constraints.append(x_m >= m_T)
 # Thrust constraints
 constraints.append(u_t <= u_t_max)
 
-# Dynamical equations as constraints
-for t in range(1, T):
-    # Rate of ascent: dx_h/dt = x_v
-    # Using backward difference: (x_h[t] - x_h[t-1])/dt = x_v[t-1]
-    constraints.append((x_h[t] - x_h[t-1]) / dt == x_v[t-1])
-    
-    # Acceleration: dx_v/dt = (u_t - D(x_h, x_v))/x_m - g(x_h)
-    # Where D(x_h, x_v) = D_c * x_v^2 * exp(-h_c * (x_h - h_0) / h_0)
-    # And g(x_h) = g_0 * (h_0 / x_h)^2
-    # Using backward difference: (x_v[t] - x_v[t-1])/dt = ...
-    drag_force = D_c * cp.square(x_v[t-1]) * cp.exp(-h_c * (x_h[t-1] - h_0) / h_0)
-    gravity_force = g_0 * cp.square(h_0 / x_h[t-1])
-    
-    constraints.append(
-        (x_v[t] - x_v[t-1]) / dt == (u_t[t-1] - drag_force) / x_m[t-1] - gravity_force
-    )
-    
-    # Rate of mass loss: dx_m/dt = -u_t/c
-    # Using backward difference: (x_m[t] - x_m[t-1])/dt = -u_t[t-1]/c
-    constraints.append((x_m[t] - x_m[t-1]) / dt == -u_t[t-1] / c)
+# Create slices for t=1:T and t=0:T-1
+# These are views, not copies
+x_h_curr = x_h[1:T]      # x_h[t] for t = 1, 2, ..., T-1
+x_h_prev = x_h[0:T-1]    # x_h[t-1] for t = 1, 2, ..., T-1
+
+x_v_curr = x_v[1:T]
+x_v_prev = x_v[0:T-1]
+
+x_m_curr = x_m[1:T]
+x_m_prev = x_m[0:T-1]
+
+u_t_prev = u_t[0:T-1]    # u_t[t-1] for t = 1, 2, ..., T-1
+
+# Vectorized constraint 1: Rate of ascent
+# (x_h[t] - x_h[t-1])/dt = x_v[t-1] for all t = 1, ..., T-1
+constraints.append((x_h_curr - x_h_prev) / dt == x_v_prev)
+
+# Vectorized constraint 2: Acceleration
+# Compute drag force for all timesteps at once
+drag_force = D_c * cp.square(x_v_prev) * cp.exp(-h_c * (x_h_prev - h_0) / h_0)
+
+# Compute gravity force for all timesteps at once
+gravity_force = g_0 * (cp.square(h_0) / cp.square(x_h_prev))
+
+# Apply the acceleration constraint for all timesteps
+constraints.append(
+    (x_v_curr - x_v_prev) / dt == (u_t_prev - drag_force) / x_m_prev - gravity_force
+)
+
+# Vectorized constraint 3: Rate of mass loss
+# (x_m[t] - x_m[t-1])/dt = -u_t[t-1]/c for all t = 1, ..., T-1
+constraints.append((x_m_curr - x_m_prev) / dt == -u_t_prev / c)
 
 # Objective: maximize altitude at end of time of flight
 objective = cp.Maximize(x_h[T-1])
