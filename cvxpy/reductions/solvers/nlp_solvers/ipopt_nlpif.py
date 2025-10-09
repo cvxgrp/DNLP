@@ -149,7 +149,7 @@ class IPOPT(NLPsolver):
         default_options = {
             'mu_strategy': 'adaptive',
             'tol': 1e-7,
-            #'bound_relax_factor': 0.0,
+            'bound_relax_factor': 0.0,
             'hessian_approximation': 'exact',
             'derivative_test': 'first-order',
             'least_square_init_duals': 'yes'
