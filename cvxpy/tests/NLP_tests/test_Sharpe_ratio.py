@@ -1,9 +1,13 @@
+import unittest
+
 import numpy as np
 
 import cvxpy as cp
+from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 np.random.seed(0)
 
+@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
 class TestSharpeRatio():
 
     def test_formulation_one(self):
@@ -35,7 +39,3 @@ class TestSharpeRatio():
         sharpe_ratio1 = mu @ x_noncvx / np.sqrt(x_noncvx @ Sigma @ x_noncvx)
         sharpe_ratio2 = mu @ x_cvx / np.sqrt(x_cvx @ Sigma @ x_cvx)
         assert(np.abs(sharpe_ratio1 - sharpe_ratio2) < 1e-6)
-
-    # TODO: once we support the square root we should add another formulation for the problem
-    def test_formulation_two(self):
-        pass

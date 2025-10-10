@@ -1,9 +1,13 @@
+import unittest
+
 import numpy as np
 import numpy.linalg as LA
 
 import cvxpy as cp
+from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
+@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
 class TestAbs():
 
     def test_lasso_square_small(self):

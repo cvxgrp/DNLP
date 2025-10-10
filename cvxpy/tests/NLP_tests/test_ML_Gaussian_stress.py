@@ -1,10 +1,14 @@
+import unittest
+
 import numpy as np
 import numpy.linalg as LA
 
 import cvxpy as cp
+from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 # TODO (DCED): should try eg. student-t regression
 
+@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
 class TestStressMLE():
     
     def test_zero_mean(self):
