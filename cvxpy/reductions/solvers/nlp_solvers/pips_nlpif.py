@@ -114,14 +114,10 @@ class PIPS(NLPsolver):
         x0 = self.construct_initial_point(bounds)
         # Create oracles object
         oracles = self.Oracles(bounds.new_problem, x0, len(bounds.cl))
-        # this should return the hessian of the lagrangian (nonlinear part)
-        hess2 = oracles.hessian()
-        # this should return the constraint function values and jacobian
-        gh_fcn = (oracles.constraints(), oracles.jacobian())
-        # this should return the objective function value and gradient
-        fcn = (oracles.objective(), oracles.gradient())
         # Set options
-        solution_nl = pips(fcn, x0, gh_fcn=gh_fcn, hess_fcn=hess2)
+        solution_nl = pips(oracles.f_fcn, x0,
+                           gh_fcn=oracles.gh_fcn,
+                           hess_fcn=oracles.hess_fcn)
         print(f"Nonlinear solution: x = {solution_nl['x']}")
         print(f"Objective value: {solution_nl['f']}")
         print(f"Iterations: {solution_nl['output']['iterations']}")
@@ -171,6 +167,10 @@ class PIPS(NLPsolver):
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
 
+        def f_fcn(self, x):
+            """Returns the objective and gradient of the objective."""
+            return self.objective(x), self.gradient(x)
+    
         def objective(self, x):
             """Returns the scalar value of the objective given x."""
             self.set_variable_value(x)
@@ -197,6 +197,10 @@ class PIPS(NLPsolver):
 
             return self.grad_obj
 
+        def gh_fcn(self, x):
+            """Returns the constraint values and jacobian."""
+            return self.constraints(x), self.jacobian(x)
+        
         def constraints(self, x):
             """Returns the constraint values."""
             self.set_variable_value(x)
@@ -297,6 +301,9 @@ class PIPS(NLPsolver):
             self.jacobian_coo_rows_cols = (rows, cols)
             return self.jacobian_coo_rows_cols
 
+        def hess_fcn(self, x, duals, obj_factor):
+            return self.hessian(x, duals['ineqnonlin'], obj_factor)
+        
         def parse_hess_dict(self, hess_dict):
             """ Adds the contribution of blocks defined in hess_dict to the full
                 hessian matrix 
@@ -381,14 +388,7 @@ class PIPS(NLPsolver):
                 vals = self.insert_missing_zeros_hessian()
             else:
                 vals = self.hess_lagrangian_coo[2]
-            
             return vals
-
-        def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,
-                        d_norm, regularization_size, alpha_du, alpha_pr,
-                        ls_trials):
-            """Prints information at every Ipopt iteration."""
-            self.iterations = iter_count
 
 
     class Bounds():

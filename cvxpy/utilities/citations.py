@@ -595,3 +595,27 @@ CITATION_DICT["IPOPT"] = \
   volume={106},
   }
 """
+
+CITATION_DICT["PIPS"] = \
+"""
+@phdthesis{wang2007multiperoidopf,
+  author = {Wang, H.},
+  title  = {On the Computation and Application of Multi-period Security-Constrained 
+    Optimal Power Flow for Real-time Electricity Market Operations},
+  school = {Cornell University},
+  year   = {2007},
+  month  = may,
+  type   = {PhD dissertation}
+}
+
+@article{wang2007computationalopf,
+  author  = {Wang, H. and Murillo-Sanchez, C. E. and Zimmerman, R. D. and Thomas, R. J.},
+  title   = {On Computational Issues of Market-Based Optimal Power Flow},
+  journal = {IEEE Transactions on Power Systems},
+  volume  = {22},
+  number  = {3},
+  pages   = {1185--1193},
+  year    = {2007},
+  month   = aug
+}
+"""
