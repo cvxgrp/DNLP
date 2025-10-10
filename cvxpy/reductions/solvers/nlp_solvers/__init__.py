@@ -1,5 +1,5 @@
 """
-Copyright 2025 CVXPY developers
+Copyright 2025 The CVXPY Developers
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,14 +13,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from cvxpy.expressions.variable import Variable
-
-
-def exp_canon(expr, args):
-    if isinstance(args[0], Variable):
-        return expr.copy([args[0]]), []
-    else:
-        t = Variable(args[0].shape)
-        if args[0].value is not None:
-            t.value = args[0].value
-        return expr.copy([t]), [t == args[0]]
