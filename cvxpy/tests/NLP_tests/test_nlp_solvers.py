@@ -1,15 +1,12 @@
-import unittest
-
 import numpy as np
+import pytest
 
 import cvxpy as cp
-from cvxpy.reductions.solvers.defines import (
-    INSTALLED_SOLVERS,
-)
+from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
-@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
-class TestSmoothCanons():
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
+class TestSmoothCanons:
     
     def test_max(self):
         x = cp.Variable(1)
@@ -56,8 +53,8 @@ class TestSmoothCanons():
         assert np.allclose(problem.value, 42, atol=1e-3)
 
 
-@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
-class TestExamplesIPOPT():
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
+class TestExamplesIPOPT:
     """
     Nonlinear test problems taken from the IPOPT documentation and
     the Julia documentation: https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/simple_examples/.
@@ -287,8 +284,8 @@ class TestExamplesIPOPT():
         assert problem.status == cp.INFEASIBLE
     """
 
-@unittest.skipUnless('IPOPT' in INSTALLED_SOLVERS, 'IPOPT is not installed.')
-class TestNonlinearControl():
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
+class TestNonlinearControl:
     
     def test_control_of_car(self):
         pass
