@@ -8,9 +8,11 @@ on:
         tags:
           - '*'
 jobs:
-  test_backends:
-    name: Test (OS=${{ matrix.os }})
+  test_nlp:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
