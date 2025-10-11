@@ -8,7 +8,7 @@ on:
         tags:
           - '*'
 jobs:
-  test_nlp:
+  run_nlp_tests:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
