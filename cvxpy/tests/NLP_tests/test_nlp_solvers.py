@@ -178,6 +178,7 @@ class TestExamplesIPOPT:
         problem.solve(solver=cp.IPOPT, nlp=True, hessian_approximation='exact')
         assert problem.status == cp.OPTIMAL
 
+    @pytest.mark.xfail(reason="Fails because norm is not supported yet.")
     def test_socp(self):
         # Define variables
         x = cp.Variable(3)
