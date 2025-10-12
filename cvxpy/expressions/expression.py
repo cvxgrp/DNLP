@@ -358,6 +358,12 @@ class Expression(u.Canonical):
                 return self.is_convex() or self.is_concave()
         return self.is_convex() or self.is_concave()
 
+    def is_dnlp(self) -> bool:
+        """
+        The expression is smooth representable.
+        """
+        return self.is_esr() or self.is_hsr()
+    
     def is_log_log_constant(self) -> bool:
         """Is the expression log-log constant, ie, elementwise positive?
         """
