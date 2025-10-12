@@ -27,16 +27,26 @@ class TestDNLP():
         assert prob.objective.expr.is_smooth()
         assert prob.constraints[0].expr.is_smooth()
 
-    def test_simple_esr(self):
-        pass
+    def test_esr(self):
+        x = cp.Variable()
+        objective = cp.Minimize(cp.abs(x))
+        assert objective.expr.is_esr()
 
-    def test_simple_hsr(self):
-        pass
+    @pytest.mark.skip(reason="sqrt is hsr but not yet implemented")
+    def test_hsr(self):
+        x = cp.Variable()
+        objective = cp.Maximize(cp.sqrt(x))
+        assert objective.expr.is_hsr()
 
     def test_simple_composition(self):
         pass
 
-    def test_simple_non_dnlp(self):
-        pass
-
-    
+    def test_non_dnlp(self):
+        """
+        The constraint abs(x) >= 5 is hsr but makes 
+        the problem non-DNLP.
+        """
+        x = cp.Variable()
+        constraints = [cp.abs(x) >= 5]
+        assert constraints[0].expr.is_hsr()
+        assert not constraints[0].is_dnlp()
