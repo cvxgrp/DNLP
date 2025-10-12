@@ -344,13 +344,13 @@ class Expression(u.Canonical):
         """
         raise NotImplementedError()
     
-    @abc.abstractmethod
+    #@abc.abstractmethod
     def is_esr(self) -> bool:
         """Is the expression esr?
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
+    #@abc.abstractmethod
     def is_hsr(self) -> bool:
         """Is the expression hsr?
         """

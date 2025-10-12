@@ -137,6 +137,10 @@ class Equality(Constraint):
                 return self.expr.is_affine()
         return self.expr.is_affine()
 
+    def is_dnlp(self) -> bool:
+        """A zero constraint is DNLP if its argument is smooth representable."""
+        return self.expr.is_smooth()
+
     def is_dgp(self, dpp: bool = False) -> bool:
         if dpp:
             with scopes.dpp_scope():
