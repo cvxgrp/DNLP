@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 
+from cvxpy.atoms.affine.promote import Promote
 from cvxpy.expressions.variable import Variable
 
 
@@ -29,6 +30,12 @@ def multiply_canon(expr, args):
     if t1.is_constant() or t2.is_constant():
         return expr.copy([t1, t2]), []
 
+    if type(t1) == Promote:
+       t1 = t1.args[0] 
+    
+    if type(t2) == Promote:
+       t2 = t2.args[0]
+    
     if not isinstance(t1, Variable):
         t1 = Variable(t1.shape)
         constraints += [t1 == args[0]]

@@ -458,7 +458,7 @@ class multiply(MulExpression):
         if not isinstance(x, Variable) and x.is_affine():
             assert(type(x) == Promote)
             x_var = x.args[0] # here x is a Promote because of how we canonicalize
-            zeros_x = np.zeros(x_var.size, dtype=int)
+            zeros_x = np.zeros(x.size, dtype=int)
             cols = np.arange(y.size)
             return {(x_var, y): (zeros_x, cols, vec),
                     (y, x_var): (cols, zeros_x, vec)}
@@ -467,7 +467,7 @@ class multiply(MulExpression):
         if not isinstance(y, Variable) and y.is_affine():
             assert(type(y) == Promote)
             y_var = y.args[0] # here y is a Promote because of how we canonicalize
-            zeros_y = np.zeros(y_var.size, dtype=int)
+            zeros_y = np.zeros(y.size, dtype=int)
             cols = np.arange(x.size)
             return {(x, y_var): (cols, zeros_y, vec),
                     (y_var, x): (zeros_y, cols, vec)}

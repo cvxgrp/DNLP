@@ -61,7 +61,7 @@ def collect_constants(expr, constants):
 LOWER_BOUND = 1e-5
 
 def log_canon(expr, args):
-    t = Variable(args[0].size, bounds=[LOWER_BOUND, None])
+    t = Variable(args[0].shape, bounds=[LOWER_BOUND, None])
 
     # if args[0] is a * x for a constant scalar or vector 'a' 
     # and a vector variable 'x', we want to add bounds to x if x

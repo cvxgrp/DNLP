@@ -180,7 +180,7 @@ class AddExpression(AffAtom):
         # convert lists to arrays
         for k, v in hess_dict.items():
             rows, cols, vals = v
-            hess_dict[k] = (np.array(rows), np.array(cols), np.array(vals))
+            hess_dict[k] = (np.atleast_1d(rows), np.atleast_1d(cols), np.atleast_1d(vals))
 
         return hess_dict
 
@@ -217,6 +217,6 @@ class AddExpression(AffAtom):
         # convert lists to arrays
         for k, v in jacobian_dict.items():
             rows, cols, vals = v
-            jacobian_dict[k] = (np.array(rows), np.array(cols), np.array(vals))
+            jacobian_dict[k] = (np.atleast_1d(rows), np.atleast_1d(cols), np.atleast_1d(vals))
 
         return jacobian_dict

@@ -27,25 +27,28 @@ MIN_BOUND = 1e-4
 #  1.  is it necessary to add the bound y >= 0? Does it help in
 #      terms of robustness?
 def div_canon(expr, args):
-    dim = (1, ) if args[0].shape == () else args[0].shape
+    #dim_z = (1, ) if args[0].shape == () else args[0].shape
+    #dim_y = (1, ) if args[1].shape == () else args[1].shape
+    dim_z = args[0].shape
+    dim_y = args[1].shape
     sgn_z = args[0].sign
 
     if sgn_z == 'NONNEGATIVE':
-        z = Variable(dim, bounds=[0, None])
+        z = Variable(dim_z, bounds=[0, None])
     elif sgn_z == 'NONPOSITIVE':
-        z = Variable(dim, bounds=[None, 0])
+        z = Variable(dim_z, bounds=[None, 0])
     else:
-        z = Variable(dim)
-    
-    y = Variable(args[1].shape, bounds=[0, None])
+        z = Variable(dim_z)
+
+    y = Variable(dim_y, bounds=[0, None])
 
     if args[1].value is not None and np.min(args[1].value) > MIN_BOUND:
         y.value = args[1].value
     else:
-        y.value = expr.point_in_domain()
+        y.value = expr.point_in_domain().reshape(dim_y)
 
     if args[0].value is not None:
-        z.value = np.atleast_1d(args[0].value) / y.value 
+        z.value = (args[0].value / y.value).reshape(dim_z)
     else:
-        z.value = expr.point_in_domain()
+        z.value = expr.point_in_domain().reshape(dim_z)
     return z, [multiply(z, y) == args[0], y == args[1]]
