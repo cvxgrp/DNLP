@@ -23,12 +23,12 @@ from cvxpy.constraints import (
     Inequality,
     NonPos,
 )
+from cvxpy.constraints.nonpos import NonNeg
 from cvxpy.reductions.solution import Solution, failure_solution
 from cvxpy.reductions.solvers.nlp_solvers.nlp_solver import NLPsolver
 from cvxpy.reductions.utilities import (
     lower_equality,
-    lower_ineq_to_nonneg,
-    nonpos2nonneg,
+    lower_ineq_to_nonpos,
 )
 from cvxpy.utilities.citations import CITATION_DICT
 
@@ -392,52 +392,77 @@ class PIPS(NLPsolver):
 
 
     class Bounds():
+        """
+        This class stores the bounds on the constraints and variables
+        and also reorders the constraints in the following order:
+        affine constraints, nonlinear equality constraints,
+        nonlinear inequality constraints.
+        """
         def __init__(self, problem):
             self.problem = problem
             self.main_var = problem.variables()
-            self.get_constraint_bounds()
+            self.order_constraints()
+            self.normalize_constraints()
             self.get_variable_bounds()
 
-        def get_constraint_bounds(self):
-            """Also normalizes the constraints and creates a new problem"""
-            lower = []
-            upper = []
-            new_constr = []
-            
+        def order_constraints(self):
+            """
+            Orders the constraints in the following way:
+            affine constraints, nonlinear equality constraints,
+            nonlinear inequality constraints.
+            """
+            affine_constr = []
+            nonlinear_eq = []
+            nonlinear_ineq = []
+            # separate affine and nonlinear constraints
             for constraint in self.problem.constraints:
-                if isinstance(constraint, Equality):
-                    lower.extend([0.0] * constraint.size)
-                    upper.extend([0.0] * constraint.size)
-                    new_constr.append(lower_equality(constraint))
-                elif isinstance(constraint, Inequality):
-                    lower.extend([0.0] * constraint.size)
-                    upper.extend([np.inf] * constraint.size)
-                    new_constr.append(lower_ineq_to_nonneg(constraint))
-                elif isinstance(constraint, NonPos):
-                    lower.extend([0.0] * constraint.size)
-                    upper.extend([np.inf] * constraint.size)
-                    new_constr.append(nonpos2nonneg(constraint))
+                if constraint.expr.is_affine():
+                    affine_constr.append(constraint)
+                else:
+                    if isinstance(constraint, Equality):
+                        nonlinear_eq.append(constraint)
+                    elif isinstance(constraint, (Inequality, NonPos, NonNeg)):
+                        nonlinear_ineq.append(constraint)
+
+            self.affine_constr = affine_constr
+            self.nonlinear_eq = nonlinear_eq
+            self.nonlinear_ineq = nonlinear_ineq
+
+        def normalize_constraints(self):
+            """
+            Normalizes the constraints to a standard form.
+            Equalities are converted to g(x) = 0
+            Inequalities are converted to h(x) <= 0
+            """
+            new_nonlinear_eq = []
+            new_nonlinear_ineq = []
+            for constraint in self.nonlinear_eq:
+                new_nonlinear_eq.append(lower_equality(constraint))
             
+            for constraint in self.nonlinear_ineq:
+                if isinstance(constraint, Inequality):
+                    new_nonlinear_ineq.append(lower_ineq_to_nonpos(constraint))
+                elif isinstance(constraint, NonNeg):
+                    new_nonlinear_ineq.append(NonPos(-constraint.expr,
+                                                     constr_id=constraint.constr_id))
+                elif isinstance(constraint, NonPos):
+                    new_nonlinear_ineq.append(constraint)
+
+            new_constr = self.affine_constr + new_nonlinear_eq + new_nonlinear_ineq
             lowered_con_problem = self.problem.copy([self.problem.objective, new_constr])
             self.new_problem = lowered_con_problem
-            self.cl = np.array(lower)
-            self.cu = np.array(upper)
 
         def get_variable_bounds(self):
-            var_lower = []
-            var_upper = []
+            var_lower, var_upper = [], []
             for var in self.main_var:
                 size = var.size
                 if var.bounds:
                     lb = var.bounds[0].flatten(order='F')
                     ub = var.bounds[1].flatten(order='F')
-
                     if var.is_nonneg():
                         lb = np.maximum(lb, 0)
-                    
                     if var.is_nonpos():
                         ub = np.minimum(ub, 0)
-                    
                     var_lower.extend(lb)
                     var_upper.extend(ub)
                 else:
@@ -447,11 +472,9 @@ class PIPS(NLPsolver):
                         var_lower.extend([0.0] * size)
                     else:
                         var_lower.extend([-np.inf] * size)
-                    
                     if var.is_nonpos():
                         var_upper.extend([0.0] * size)
                     else:
                         var_upper.extend([np.inf] * size)
-
             self.lb = np.array(var_lower)
             self.ub = np.array(var_upper)
