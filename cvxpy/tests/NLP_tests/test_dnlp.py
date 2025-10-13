@@ -1,6 +1,3 @@
-import numpy as np
-import pytest
-
 import cvxpy as cp
 
 
