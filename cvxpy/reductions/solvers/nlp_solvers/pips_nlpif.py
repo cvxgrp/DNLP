@@ -17,6 +17,9 @@ limitations under the License.
 import numpy as np
 import scipy.sparse as sp
 
+import cvxpy as cp
+from cvxpy.constraints.power import PowCone3D
+from cvxpy.constraints.zero import Zero
 import cvxpy.settings as s
 from cvxpy.constraints import (
     Equality,
@@ -24,13 +27,16 @@ from cvxpy.constraints import (
     NonPos,
 )
 from cvxpy.constraints.nonpos import NonNeg
+from cvxpy.reductions.inverse_data import InverseData
 from cvxpy.reductions.solution import Solution, failure_solution
 from cvxpy.reductions.solvers.nlp_solvers.nlp_solver import NLPsolver
 from cvxpy.reductions.utilities import (
+    group_constraints,
     lower_equality,
     lower_ineq_to_nonpos,
 )
 from cvxpy.utilities.citations import CITATION_DICT
+from cvxpy.utilities.coeff_extractor import CoeffExtractor
 
 
 class PIPS(NLPsolver):
@@ -112,10 +118,12 @@ class PIPS(NLPsolver):
         from pypower import pips
         bounds = self.Bounds(data["problem"])
         x0 = self.construct_initial_point(bounds)
+        A, lin_lower, lin_upper = bounds.A, bounds.l, bounds.u
         # Create oracles object
         oracles = self.Oracles(bounds.new_problem, x0, len(bounds.cl))
         # Set options
-        solution_nl = pips(oracles.f_fcn, x0,
+        solution_nl = pips(oracles.f_fcn, x0, A, lin_lower, lin_upper,
+                           bounds.lb, bounds.ub,
                            gh_fcn=oracles.gh_fcn,
                            hess_fcn=oracles.hess_fcn)
         print(f"Nonlinear solution: x = {solution_nl['x']}")
@@ -394,7 +402,7 @@ class PIPS(NLPsolver):
     class Bounds():
         """
         This class stores the bounds on the constraints and variables
-        and also reorders the constraints in the following order:
+        and also reorders the constraints in the following way:
         affine constraints, nonlinear equality constraints,
         nonlinear inequality constraints.
         """
@@ -404,6 +412,7 @@ class PIPS(NLPsolver):
             self.order_constraints()
             self.normalize_constraints()
             self.get_variable_bounds()
+            self.get_linear_data()
 
         def order_constraints(self):
             """
@@ -478,3 +487,25 @@ class PIPS(NLPsolver):
                         var_upper.extend([np.inf] * size)
             self.lb = np.array(var_lower)
             self.ub = np.array(var_upper)
+
+        def get_linear_data(self):
+            """
+            Use CVXPY's CoeffExtractor to retrieve A, l, u
+            for the affine constraints.
+            """
+            linear_problem = cp.Problem(cp.Minimize(0),
+                                         self.affine_constr)
+            data, _, _ = linear_problem.get_problem_data(cp.SCS)
+            A, b, cones = data['A'], data['b'], data['dims']
+            self.A = A
+            lower = -np.inf * np.ones(b.shape)
+            upper = np.inf * np.ones(b.shape)
+            # the standard form of SCS is Ax + s = b, s in K
+            # in other words we have b - Ax in {0} x {R_+}
+            if cones.zero > 0:
+                lower[:cones.zero] = b[:cones.zero]
+                upper[:cones.zero] = b[:cones.zero]
+            if cones.nonneg > 0:
+                upper[cones.zero:cones.zero+cones.nonneg] = b[cones.zero:cones.zero+cones.nonneg]
+            self.l = lower
+            self.u = upper
