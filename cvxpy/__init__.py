@@ -106,6 +106,7 @@ from cvxpy.settings import (
     HIGHS as HIGHS,
     IPOPT as IPOPT,
     KNITRO as KNITRO,
+    PIPS as PIPS,
     get_num_threads as get_num_threads,
     set_num_threads as set_num_threads,
 )

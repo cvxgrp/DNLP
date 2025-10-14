@@ -49,6 +49,7 @@ from cvxpy.reductions.solvers import defines as slv_def
 from cvxpy.reductions.solvers.conic_solvers.conic_solver import ConicSolver
 from cvxpy.reductions.solvers.defines import SOLVER_MAP_CONIC, SOLVER_MAP_QP
 from cvxpy.reductions.solvers.nlp_solvers.ipopt_nlpif import IPOPT as IPOPT_nlp
+from cvxpy.reductions.solvers.nlp_solvers.pips_nlpif import PIPS as PIPS_nlp
 from cvxpy.reductions.solvers.qp_solvers.qp_solver import QpSolver
 from cvxpy.reductions.solvers.solver import Solver
 from cvxpy.reductions.solvers.solving_chain import (
@@ -1219,8 +1220,13 @@ class Problem(u.Canonical):
                                                                 verbose, solver_opts=kwargs)
                 self.unpack_results(solution, smooth_chain, inverse_data)
             else:
-                nlp_reductions = reductions + [Expr2Smooth(smooth_approx=False),
-                                                                    IPOPT_nlp()]
+                nlp_reductions = reductions + [Expr2Smooth(smooth_approx=False)]
+                if solver is None:
+                    nlp_reductions += [IPOPT_nlp()]
+                elif solver.upper() == 'IPOPT':
+                    nlp_reductions += [IPOPT_nlp()]
+                elif solver.upper() == 'PIPS':
+                    nlp_reductions += [PIPS_nlp()]
                 nlp_chain = SolvingChain(reductions=nlp_reductions)
                 problem, inverse_data = nlp_chain.apply(problem=self)
                 solution = nlp_chain.solver.solve_via_data(problem, warm_start,

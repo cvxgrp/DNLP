@@ -116,7 +116,7 @@ class PIPS(NLPsolver):
         tuple
             (status, optimal value, primal, equality dual, inequality dual)
         """
-        from pypower import pips
+        from pypower.pips import pips
         bounds = self.Bounds(data["problem"])
         x0 = self.construct_initial_point(bounds)
         A, lin_lower, lin_upper = bounds.A, bounds.l, bounds.u
@@ -124,10 +124,12 @@ class PIPS(NLPsolver):
         oracles = self.Oracles(bounds.new_problem, x0, len(bounds.l),
                                bounds.nonlinear_eq, bounds.nonlinear_ineq)
         # Set options
-        solution_nl = pips(oracles.f_fcn, x0, A, lin_lower, lin_upper,
-                           bounds.lb, bounds.ub,
-                           gh_fcn=oracles.gh_fcn,
-                           hess_fcn=oracles.hess_fcn)
+        solution_nl = pips(
+            f_fcn=oracles.f_fcn, x0=x0, A=A, l=lin_lower, u=lin_upper,
+            xmin=bounds.lb, xmax=bounds.ub,
+            gh_fcn=oracles.gh_fcn,
+            hess_fcn=oracles.hess_fcn,
+            opt=None)
         print(f"Nonlinear solution: x = {solution_nl['x']}")
         print(f"Objective value: {solution_nl['f']}")
         print(f"Iterations: {solution_nl['output']['iterations']}")
@@ -143,6 +145,43 @@ class PIPS(NLPsolver):
             Data generated via an apply call.
         """
         return CITATION_DICT["PIPS"]
+
+    def construct_initial_point(self, bounds):
+        initial_values = []
+        offset = 0
+        lbs = bounds.lb 
+        ubs = bounds.ub
+        for var in bounds.main_var:
+            if var.value is not None:
+                initial_values.append(np.atleast_1d(var.value).flatten(order='F'))
+            else:
+                # If no initial value is specified, look at the bounds.
+                # If both lb and ub are specified, we initialize the
+                # variables to be their midpoints. If only one of them 
+                # is specified, we initialize the variable one unit 
+                # from the bound. If none of them is specified, we 
+                # initialize it to zero.
+                lb = lbs[offset:offset + var.size]
+                ub = ubs[offset:offset + var.size]
+
+                lb_finite = np.isfinite(lb)
+                ub_finite = np.isfinite(ub)
+
+                # Replace infs with zero for arithmetic
+                lb0 = np.where(lb_finite, lb, 0.0)
+                ub0 = np.where(ub_finite, ub, 0.0)
+
+                # Midpoint if both finite, one from bound if only one finite, zero if none
+                init = (lb_finite * ub_finite * 0.5 * (lb0 + ub0) +
+                        lb_finite * (~ub_finite) * (lb0 + 1.0) +
+                        (~lb_finite) * ub_finite * (ub0 - 1.0))
+
+                initial_values.append(init)
+            
+            offset += var.size
+        x0 = np.concatenate(initial_values, axis=0)
+        return x0
+
 
     class Oracles():
         def __init__(self, problem, initial_point, num_constraints,
@@ -282,7 +321,6 @@ class PIPS(NLPsolver):
                  (self.hess_lagrangian_coo[0], self.hess_lagrangian_coo[1])),
                 shape=(self.initial_point.size, self.initial_point.size))
             return coo.tocsr()
-
 
         def parse_hess_dict(self, hess_dict):
             """
