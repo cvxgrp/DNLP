@@ -149,28 +149,17 @@ class PIPS(NLPsolver):
                      equality_constr, inequality_constr):
             self.problem = problem
             self.grad_obj = np.zeros(initial_point.size, dtype=np.float64)
-            self.hess_lagrangian = np.zeros((initial_point.size, initial_point.size),
-                                             dtype=np.float64)
 
-            # for evaluating hessian            
             self.hess_lagrangian_coo = ([], [], [])
-            self.hess_lagrangian_coo_rows_cols = ([], [])
-            self.has_computed_hess_sparsity = False
-            self.num_constraints = num_constraints
-
-            # for evaluating jacobian
             self.jacobian_coo = ([], [], [])
-            self.jacobian_coo_rows_cols = ([], [])
-            self.jacobian_affine_coo = ([], [], [])
-            self.has_computed_jac_sparsity = False
-            self.has_stored_affine_jacobian = False
 
-            # store equality and inequality constraints
             self.equality_constr = equality_constr
             self.inequality_constr = inequality_constr
-            self.main_var = []
+
             self.initial_point = initial_point
-            self.iterations = 0
+            self.num_constraints = num_constraints
+            
+            self.main_var = []
             for var in self.problem.variables():
                 self.main_var.append(var)
 
@@ -262,6 +251,39 @@ class PIPS(NLPsolver):
             inequality_constr = self.inequality_constr
             return self.hessian(x, duals, obj_factor, equality_constr, inequality_constr)
 
+        def hessian(self, x, duals, obj_factor, equality_constr, inequality_constr):
+            self.set_variable_value(x)
+            
+            # reset previous call
+            self.hess_lagrangian_coo = ([], [], [])
+            
+            # compute hessian of objective times obj_factor
+            obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([obj_factor]))
+            self.parse_hess_dict(obj_hess_dict)
+
+            # compute hessian of constraints times duals
+            constr_offset = 0
+            for constraint in equality_constr:
+                lmbda = duals['eqnonlin'][constr_offset:constr_offset + constraint.size]
+                constraint_hess_dict = constraint.expr.hess_vec(lmbda)
+                self.parse_hess_dict(constraint_hess_dict)
+                constr_offset += constraint.size
+            # reset constraint offset for inequality duals
+            constr_offset = 0
+            for constraint in inequality_constr:
+                lmbda = duals['ineqnonlin'][constr_offset:constr_offset + constraint.size]
+                constraint_hess_dict = constraint.expr.hess_vec(lmbda)
+                self.parse_hess_dict(constraint_hess_dict)
+                constr_offset += constraint.size
+            # merge duplicate entries together
+            self.sum_coo()
+            coo = sp.coo_matrix(
+                (self.hess_lagrangian_coo[2], 
+                 (self.hess_lagrangian_coo[0], self.hess_lagrangian_coo[1])),
+                shape=(self.initial_point.size, self.initial_point.size))
+            return coo.tocsr()
+
+
         def parse_hess_dict(self, hess_dict):
             """
             Adds the contribution of blocks defined in hess_dict to the full
@@ -291,48 +313,6 @@ class PIPS(NLPsolver):
             coo = sp.coo_matrix((vals, (rows, cols)), shape=shape)
             coo.sum_duplicates()
             self.hess_lagrangian_coo = (coo.row, coo.col, coo.data)
-        
-        def insert_missing_zeros_hessian(self):
-            rows, cols, vals = self.hess_lagrangian_coo
-            rows_true, cols_true = self.hess_lagrangian_coo_rows_cols
-            dim = self.initial_point.size
-            H = sp.csr_matrix((vals, (rows, cols)), shape=(dim, dim))
-            vals_true = H[rows_true, cols_true].data
-            return vals_true
-
-        def hessian(self, x, duals, obj_factor, equality_constr, inequality_constr):
-            self.set_variable_value(x)
-            
-            # reset previous call
-            self.hess_lagrangian_coo = ([], [], [])
-            
-            # compute hessian of objective times obj_factor
-            obj_hess_dict = self.problem.objective.expr.hess_vec(np.array([obj_factor]))
-            self.parse_hess_dict(obj_hess_dict)
-
-            # compute hessian of constraints times duals
-            constr_offset = 0
-            for constraint in equality_constr:
-                lmbda = duals['eqnonlin'][constr_offset:constr_offset + constraint.size]
-                constraint_hess_dict = constraint.expr.hess_vec(lmbda)
-                self.parse_hess_dict(constraint_hess_dict)
-                constr_offset += constraint.size
-            # reset constraint offset for inequality duals
-            constr_offset = 0
-            for constraint in inequality_constr:
-                lmbda = duals['ineqnonlin'][constr_offset:constr_offset + constraint.size]
-                constraint_hess_dict = constraint.expr.hess_vec(lmbda)
-                self.parse_hess_dict(constraint_hess_dict)
-                constr_offset += constraint.size
-            # merge duplicate entries together
-            self.sum_coo()
-            # insert missing zeros (ie., entries that turned out to be zero but are not 
-            # structurally zero)
-            if self.has_computed_hess_sparsity:
-                vals = self.insert_missing_zeros_hessian()
-            else:
-                vals = self.hess_lagrangian_coo[2]
-            return vals
 
 
     class Bounds():
