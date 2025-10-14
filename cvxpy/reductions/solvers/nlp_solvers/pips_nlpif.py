@@ -18,6 +18,9 @@ import numpy as np
 import scipy.sparse as sp
 
 import cvxpy as cp
+from cvxpy.constraints.zero import Zero
+from cvxpy.reductions.dcp2cone.cone_matrix_stuffing import ConeDims
+from cvxpy.reductions.inverse_data import InverseData
 import cvxpy.settings as s
 from cvxpy.constraints import (
     Equality,
@@ -28,10 +31,14 @@ from cvxpy.constraints.nonpos import NonNeg
 from cvxpy.reductions.solution import Solution, failure_solution
 from cvxpy.reductions.solvers.nlp_solvers.nlp_solver import NLPsolver
 from cvxpy.reductions.utilities import (
+    ReducedMat,
+    group_constraints,
     lower_equality,
+    lower_ineq_to_nonneg,
     lower_ineq_to_nonpos,
 )
 from cvxpy.utilities.citations import CITATION_DICT
+from cvxpy.utilities.coeff_extractor import CoeffExtractor
 
 
 class PIPS(NLPsolver):
@@ -121,14 +128,15 @@ class PIPS(NLPsolver):
         x0 = self.construct_initial_point(bounds)
         A, lin_lower, lin_upper = bounds.A, bounds.l, bounds.u
         # Create oracles object
-        oracles = self.Oracles(bounds.new_problem, x0, len(bounds.l),
+        oracles = self.Oracles(bounds.new_problem, x0,
                                bounds.nonlinear_eq, bounds.nonlinear_ineq)
+        import pdb; pdb.set_trace()
         # Set options
         solution_nl = pips(
             f_fcn=oracles.f_fcn, x0=x0, A=A, l=lin_lower, u=lin_upper,
             xmin=bounds.lb, xmax=bounds.ub,
-            gh_fcn=oracles.gh_fcn,
-            hess_fcn=oracles.hess_fcn,
+            #gh_fcn=oracles.gh_fcn,
+            #hess_fcn=oracles.hess_fcn,
             opt=None)
         print(f"Nonlinear solution: x = {solution_nl['x']}")
         print(f"Objective value: {solution_nl['f']}")
@@ -184,7 +192,7 @@ class PIPS(NLPsolver):
 
 
     class Oracles():
-        def __init__(self, problem, initial_point, num_constraints,
+        def __init__(self, problem, initial_point,
                      equality_constr, inequality_constr):
             self.problem = problem
             self.grad_obj = np.zeros(initial_point.size, dtype=np.float64)
@@ -196,7 +204,6 @@ class PIPS(NLPsolver):
             self.inequality_constr = inequality_constr
 
             self.initial_point = initial_point
-            self.num_constraints = num_constraints
             
             self.main_var = []
             for var in self.problem.variables():
@@ -209,8 +216,11 @@ class PIPS(NLPsolver):
                 var.value = x[offset:offset+size].reshape(var.shape, order='F')
                 offset += size
 
-        def f_fcn(self, x):
+        def f_fcn(self, x, return_hessian=False):
             """Returns the objective and gradient of the objective."""
+            if return_hessian:
+                zeros = np.zeros((x.size, x.size))
+                return self.objective(x), self.gradient(x), zeros
             return self.objective(x), self.gradient(x)
     
         def objective(self, x):
@@ -241,9 +251,9 @@ class PIPS(NLPsolver):
             Returns the constraint values and jacobian
             of the equality and inequality constraints.
             """
-            g, dg = (self.constraints(x, self.equality_constr), 
+            g, dg = (self.constraints(x, self.equality_constr),
                      self.jacobian(x, self.equality_constr))
-            h, dh = (self.constraints(x, self.inequality_constr), 
+            h, dh = (self.constraints(x, self.inequality_constr),
                      self.jacobian(x, self.inequality_constr))
             return h, g, dh, dg
         
@@ -254,19 +264,24 @@ class PIPS(NLPsolver):
             constraint_values = []
             for constraint in constr_list:
                 constraint_values.append(np.asarray(constraint.args[0].value).flatten(order='F'))
+            if not constraint_values:
+                return np.array([])
             return np.concatenate(constraint_values)
 
         def jacobian(self, x, constr_list):
             self.set_variable_value(x)
             # compute jacobian of each constraint in constr_list
+            if not constr_list:
+                return None
             constr_offset = 0
             for constraint in constr_list:
                 grad_dict = constraint.expr.jacobian()
                 self.parse_jacobian_dict(grad_dict, constr_offset)
                 constr_offset += constraint.size
+            import pdb; pdb.set_trace()
             coo = sp.coo_matrix(
                 (self.jacobian_coo[2], (self.jacobian_coo[0], self.jacobian_coo[1])),
-                shape=(self.num_constraints, self.initial_point.size))
+                shape=(constr_offset, self.initial_point.size))
             return coo.tocsr()
 
         def parse_jacobian_dict(self, grad_dict, constr_offset):
@@ -288,6 +303,8 @@ class PIPS(NLPsolver):
         def hess_fcn(self, x, duals, obj_factor):
             equality_constr = self.equality_constr
             inequality_constr = self.inequality_constr
+            if not equality_constr and not inequality_constr:
+                return None
             return self.hessian(x, duals, obj_factor, equality_constr, inequality_constr)
 
         def hessian(self, x, duals, obj_factor, equality_constr, inequality_constr):
@@ -380,7 +397,10 @@ class PIPS(NLPsolver):
             # separate affine and nonlinear constraints
             for constraint in self.problem.constraints:
                 if constraint.expr.is_affine():
-                    affine_constr.append(constraint)
+                    if isinstance(constraint, Equality):
+                        affine_constr.append(lower_equality(constraint))
+                    elif isinstance(constraint, Inequality):
+                        affine_constr.append(lower_ineq_to_nonneg(constraint))
                 else:
                     if isinstance(constraint, Equality):
                         nonlinear_eq.append(constraint)
@@ -447,13 +467,36 @@ class PIPS(NLPsolver):
             Use CVXPY's get_problem_data to get the matrix A
             and bounds l, u for the affine constraints.
             """
+            """
             linear_problem = cp.Problem(cp.Minimize(0),
                                          self.affine_constr)
             data, _, _ = linear_problem.get_problem_data(cp.SCS)
             A, b, cones = data['A'], data['b'], data['dims']
             self.A = A
+            """
+            inverse_data = InverseData(self.new_problem)
+            extractor = CoeffExtractor(inverse_data, s.SCIPY_CANON_BACKEND)
+            # Reorder constraints to Zero, NonNeg, SOC, PSD, EXP, PowCone3D
+            constr_map = group_constraints(self.affine_constr)
+            ordered_cons = constr_map[Zero] + constr_map[NonNeg]
+            inverse_data.cons_id_map = {con.id: con.id for con in ordered_cons}
+            inverse_data.constraints = ordered_cons
+            # Batch expressions together, then split apart.
+            expr_list = [arg for c in ordered_cons for arg in c.args]
+            params_to_problem_data = extractor.affine(expr_list)
+            var_size = 0
+            for var in self.main_var:
+                var_size += var.size
+            reduced_A = ReducedMat(params_to_problem_data, var_size)
+            reduced_A.cache(keep_zeros=False)
+            A, b = reduced_A.get_matrix_from_tensor(None, with_offset=True)
+            self.A = A
+            b = np.atleast_1d(b)
+            constr_map = group_constraints(ordered_cons)
+            cones = ConeDims(constr_map)
             lower = -np.inf * np.ones(b.shape)
             upper = np.inf * np.ones(b.shape)
+            import pdb; pdb.set_trace()
             # the standard form of SCS is Ax + s = b, s in K
             # in other words we have b - Ax in {0} x {R_+}
             if cones.zero > 0:
