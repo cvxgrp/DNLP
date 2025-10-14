@@ -18,8 +18,6 @@ import numpy as np
 import scipy.sparse as sp
 
 import cvxpy as cp
-from cvxpy.constraints.power import PowCone3D
-from cvxpy.constraints.zero import Zero
 import cvxpy.settings as s
 from cvxpy.constraints import (
     Equality,
@@ -27,16 +25,13 @@ from cvxpy.constraints import (
     NonPos,
 )
 from cvxpy.constraints.nonpos import NonNeg
-from cvxpy.reductions.inverse_data import InverseData
 from cvxpy.reductions.solution import Solution, failure_solution
 from cvxpy.reductions.solvers.nlp_solvers.nlp_solver import NLPsolver
 from cvxpy.reductions.utilities import (
-    group_constraints,
     lower_equality,
     lower_ineq_to_nonpos,
 )
 from cvxpy.utilities.citations import CITATION_DICT
-from cvxpy.utilities.coeff_extractor import CoeffExtractor
 
 
 class PIPS(NLPsolver):
@@ -46,13 +41,9 @@ class PIPS(NLPsolver):
     # Map between PIPS status and CVXPY status
     STATUS_MAP = {
         # Success cases
-        0: s.OPTIMAL,                    # Solve_Succeeded
-        1: s.OPTIMAL_INACCURATE,         # Solved_To_Acceptable_Level
-        6: s.OPTIMAL,                    # Feasible_Point_Found
-        
-        # Infeasibility/Unboundedness
-        2: s.INFEASIBLE,                 # Infeasible_Problem_Detected
-        4: s.UNBOUNDED,                  # Diverging_Iterates
+        True: s.OPTIMAL,                     # converged=True: first order optimality
+        False: s.OPTIMAL_INACCURATE,         # converged=False: maximum iterations reached
+        None: s.SOLVER_ERROR,                # converged=None: numerically failed
     }
 
     def name(self):
@@ -72,16 +63,17 @@ class PIPS(NLPsolver):
         Returns the solution to the original problem given the inverse_data.
         """
         attr = {}
-        status = self.STATUS_MAP[solution['status']]
-        # the info object does not contain all the attributes we want
-        # see https://github.com/mechmotum/cyipopt/issues/17
-        # attr[s.SOLVE_TIME] = solution.solve_time
-        attr[s.NUM_ITERS] = solution['iterations']
-        # more detailed statistics here when available
-        # attr[s.EXTRA_STATS] = solution.extra.FOO
-    
+        status = self.STATUS_MAP[solution['converged']]
+        
+        # Extract PIPS output information
+        attr[s.NUM_ITERS] = solution['output']['iterations']
+        
+        # Store PIPS-specific information if needed
+        if 'output' in solution and 'message' in solution['output']:
+            attr[s.EXTRA_STATS] = {'message': solution['output']['message']}
+        
         if status in s.SOLUTION_PRESENT:
-            primal_val = solution['obj_val']
+            primal_val = solution['f']
             opt_val = primal_val + inverse_data.offset
             primal_vars = {}
             x_opt = solution['x']
@@ -89,7 +81,16 @@ class PIPS(NLPsolver):
                 shape = inverse_data.var_shapes[id]
                 size = np.prod(shape, dtype=int)
                 primal_vars[id] = np.reshape(x_opt[offset:offset+size], shape, order='F')
-            return Solution(status, opt_val, primal_vars, {}, attr)
+            
+            # Extract dual variables from PIPS lambda dictionary
+            dual_vars = {}
+            # if 'lmbda' in solution:
+                # lmbda = solution['lmbda']
+                # Map PIPS dual variables to CVXPY constraint IDs
+                # This mapping depends on your specific constraint setup
+                # Example mappings (adjust based on your inverse_data):
+                # dual_vars[constraint_id] = lmbda['eqnonlin'] or lmbda['ineqnonlin'], etc.
+            return Solution(status, opt_val, primal_vars, dual_vars, attr)
         else:
             return failure_solution(status, attr)
 
@@ -120,7 +121,8 @@ class PIPS(NLPsolver):
         x0 = self.construct_initial_point(bounds)
         A, lin_lower, lin_upper = bounds.A, bounds.l, bounds.u
         # Create oracles object
-        oracles = self.Oracles(bounds.new_problem, x0, len(bounds.cl))
+        oracles = self.Oracles(bounds.new_problem, x0, len(bounds.l),
+                               bounds.nonlinear_eq, bounds.nonlinear_ineq)
         # Set options
         solution_nl = pips(oracles.f_fcn, x0, A, lin_lower, lin_upper,
                            bounds.lb, bounds.ub,
@@ -143,7 +145,8 @@ class PIPS(NLPsolver):
         return CITATION_DICT["PIPS"]
 
     class Oracles():
-        def __init__(self, problem, initial_point, num_constraints):
+        def __init__(self, problem, initial_point, num_constraints,
+                     equality_constr, inequality_constr):
             self.problem = problem
             self.grad_obj = np.zeros(initial_point.size, dtype=np.float64)
             self.hess_lagrangian = np.zeros((initial_point.size, initial_point.size),
@@ -162,6 +165,9 @@ class PIPS(NLPsolver):
             self.has_computed_jac_sparsity = False
             self.has_stored_affine_jacobian = False
 
+            # store equality and inequality constraints
+            self.equality_constr = equality_constr
+            self.inequality_constr = inequality_constr
             self.main_var = []
             self.initial_point = initial_point
             self.iterations = 0
@@ -188,10 +194,8 @@ class PIPS(NLPsolver):
         def gradient(self, x):
             """Returns the gradient of the objective with respect to x."""
             self.set_variable_value(x)
-
             # fill with zeros to reset from previous call
             self.grad_obj.fill(0)
-
             grad_offset = 0
             grad_dict = self.problem.objective.expr.grad
             for var in self.main_var:
@@ -202,24 +206,42 @@ class PIPS(NLPsolver):
                         array = array.toarray().flatten(order='F')
                     self.grad_obj[grad_offset:grad_offset+size] = array
                 grad_offset += size
-
             return self.grad_obj
 
         def gh_fcn(self, x):
-            """Returns the constraint values and jacobian."""
-            return self.constraints(x), self.jacobian(x)
+            """
+            Returns the constraint values and jacobian
+            of the equality and inequality constraints.
+            """
+            g, dg = (self.constraints(x, self.equality_constr), 
+                     self.jacobian(x, self.equality_constr))
+            h, dh = (self.constraints(x, self.inequality_constr), 
+                     self.jacobian(x, self.inequality_constr))
+            return h, g, dh, dg
         
-        def constraints(self, x):
+        def constraints(self, x, constr_list):
             """Returns the constraint values."""
             self.set_variable_value(x)
             # Evaluate all constraints
             constraint_values = []
-            for constraint in self.problem.constraints:
+            for constraint in constr_list:
                 constraint_values.append(np.asarray(constraint.args[0].value).flatten(order='F'))
-            
             return np.concatenate(constraint_values)
 
-        def parse_jacobian_dict(self, grad_dict, constr_offset, is_affine):
+        def jacobian(self, x, constr_list):
+            self.set_variable_value(x)
+            # compute jacobian of each constraint in constr_list
+            constr_offset = 0
+            for constraint in constr_list:
+                grad_dict = constraint.expr.jacobian()
+                self.parse_jacobian_dict(grad_dict, constr_offset)
+                constr_offset += constraint.size
+            coo = sp.coo_matrix(
+                (self.jacobian_coo[2], (self.jacobian_coo[0], self.jacobian_coo[1])),
+                shape=(self.num_constraints, self.initial_point.size))
+            return coo.tocsr()
+
+        def parse_jacobian_dict(self, grad_dict, constr_offset):
             col_offset = 0
             for var in self.main_var:
                 if var in grad_dict:
@@ -233,88 +255,17 @@ class PIPS(NLPsolver):
                     self.jacobian_coo[1].extend(cols + col_offset)
                     self.jacobian_coo[2].extend(vals)
 
-                    if is_affine:
-                        self.jacobian_affine_coo[0].extend(rows + constr_offset)
-                        self.jacobian_affine_coo[1].extend(cols + col_offset)
-                        self.jacobian_affine_coo[2].extend(vals)
-
                 col_offset += var.size
-        
-        def insert_missing_zeros_jacobian(self):
-            rows, cols, vals = self.jacobian_coo
-            rows_true, cols_true = self.jacobian_coo_rows_cols
-            if not self.permutation_needed:
-                return vals
-            dim = self.initial_point.size
-            m = self.num_constraints
-            J = sp.csr_matrix((vals, (rows, cols)), shape=(m, dim))
-            vals_true = J[rows_true, cols_true].data
-            return vals_true
-
-        def jacobian(self, x):
-            self.set_variable_value(x)
-        
-            # reset previous call
-            if not self.has_stored_affine_jacobian:
-                self.jacobian_coo = ([], [], [])
-            else:
-                self.jacobian_coo = (self.jacobian_affine_coo[0].copy(), 
-                                     self.jacobian_affine_coo[1].copy(),
-                                     self.jacobian_affine_coo[2].copy())
-
-            # compute jacobian of each constraint
-            constr_offset = 0
-            for constraint in self.problem.constraints:
-                is_affine = constraint.expr.is_affine()
-                if is_affine and self.has_stored_affine_jacobian:
-                    constr_offset += constraint.size
-                    continue
-                
-                grad_dict = constraint.expr.jacobian()
-                self.parse_jacobian_dict(grad_dict, constr_offset, is_affine)
-                constr_offset += constraint.size
-            
-            # insert missing zeros (ie., entries that turned out to be zero but
-            # are not structurally zero)
-            if self.has_computed_jac_sparsity:
-                vals = self.insert_missing_zeros_jacobian()
-            else:
-                vals = self.jacobian_coo[2]
-        
-            return vals
-            
-        def jacobianstructure(self):
-            # if we have already computed the sparsity structure, return it
-            # (Ipopt only calls this function once, so this if is not strictly
-            #  necessary)
-            if self.has_computed_jac_sparsity:
-                return self.jacobian_coo_rows_cols
-            
-            # set values to nans for full jacobian structure
-            x = np.nan * np.ones(self.initial_point.size)
-            self.jacobian(x)
-            self.has_computed_jac_sparsity = True
-            self.has_stored_affine_jacobian = True
-
-            # permutation inside "insert_missing_zeros_jacobian" is needed if the 
-            # problem has both affine and none-affine constraints.
-            self.permutation_needed = False
-            for constraint in self.problem.constraints:
-                if not constraint.expr.is_affine():
-                    self.permutation_needed = True
-                    break
-
-            # store sparsity pattern
-            rows, cols = self.jacobian_coo[0], self.jacobian_coo[1]
-            self.jacobian_coo_rows_cols = (rows, cols)
-            return self.jacobian_coo_rows_cols
 
         def hess_fcn(self, x, duals, obj_factor):
-            return self.hessian(x, duals['ineqnonlin'], obj_factor)
-        
+            equality_constr = self.equality_constr
+            inequality_constr = self.inequality_constr
+            return self.hessian(x, duals, obj_factor, equality_constr, inequality_constr)
+
         def parse_hess_dict(self, hess_dict):
-            """ Adds the contribution of blocks defined in hess_dict to the full
-                hessian matrix 
+            """
+            Adds the contribution of blocks defined in hess_dict to the full
+            hessian matrix
             """
             row_offset = 0
             for var1 in self.main_var:
@@ -349,27 +300,7 @@ class PIPS(NLPsolver):
             vals_true = H[rows_true, cols_true].data
             return vals_true
 
-        def hessianstructure(self):            
-            # if we have already computed the sparsity structure, return it
-            # (Ipopt only calls this function once, so this if is not strictly
-            #  necessary)
-            if self.has_computed_hess_sparsity:
-                return self.hess_lagrangian_coo_rows_cols
-            
-            # set values to nans for full hessian structure
-            x = np.nan * np.ones(self.initial_point.size)
-            self.hessian(x, np.ones(self.num_constraints), 1.0)
-            self.has_computed_hess_sparsity = True
-
-            # extract lower triangular part
-            rows, cols = self.hess_lagrangian_coo[0], self.hess_lagrangian_coo[1]
-            mask = rows >= cols 
-            rows = rows[mask]
-            cols = cols[mask]
-            self.hess_lagrangian_coo_rows_cols = (rows, cols)
-            return self.hess_lagrangian_coo_rows_cols
-            
-        def hessian(self, x, duals, obj_factor):
+        def hessian(self, x, duals, obj_factor, equality_constr, inequality_constr):
             self.set_variable_value(x)
             
             # reset previous call
@@ -381,15 +312,20 @@ class PIPS(NLPsolver):
 
             # compute hessian of constraints times duals
             constr_offset = 0
-            for constraint in self.problem.constraints:    
-                lmbda = duals[constr_offset:constr_offset + constraint.size]
+            for constraint in equality_constr:
+                lmbda = duals['eqnonlin'][constr_offset:constr_offset + constraint.size]
                 constraint_hess_dict = constraint.expr.hess_vec(lmbda)
                 self.parse_hess_dict(constraint_hess_dict)
                 constr_offset += constraint.size
-
+            # reset constraint offset for inequality duals
+            constr_offset = 0
+            for constraint in inequality_constr:
+                lmbda = duals['ineqnonlin'][constr_offset:constr_offset + constraint.size]
+                constraint_hess_dict = constraint.expr.hess_vec(lmbda)
+                self.parse_hess_dict(constraint_hess_dict)
+                constr_offset += constraint.size
             # merge duplicate entries together
             self.sum_coo()
-
             # insert missing zeros (ie., entries that turned out to be zero but are not 
             # structurally zero)
             if self.has_computed_hess_sparsity:
@@ -490,8 +426,8 @@ class PIPS(NLPsolver):
 
         def get_linear_data(self):
             """
-            Use CVXPY's CoeffExtractor to retrieve A, l, u
-            for the affine constraints.
+            Use CVXPY's get_problem_data to get the matrix A
+            and bounds l, u for the affine constraints.
             """
             linear_problem = cp.Problem(cp.Minimize(0),
                                          self.affine_constr)
@@ -505,6 +441,8 @@ class PIPS(NLPsolver):
             if cones.zero > 0:
                 lower[:cones.zero] = b[:cones.zero]
                 upper[:cones.zero] = b[:cones.zero]
+            # the remainder of the constraints are nonnegative
+            # in other words b >= Ax >= -inf
             if cones.nonneg > 0:
                 upper[cones.zero:cones.zero+cones.nonneg] = b[cones.zero:cones.zero+cones.nonneg]
             self.l = lower
