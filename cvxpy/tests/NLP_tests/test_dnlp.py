@@ -27,12 +27,16 @@ class TestDNLP():
     def test_abs_esr(self):
         x = cp.Variable()
         objective = cp.Minimize(cp.abs(x))
+        prob = cp.Problem(objective)
         assert objective.expr.is_esr()
+        assert prob.is_dnlp()
 
     def test_sqrt_hsr(self):
         x = cp.Variable()
         objective = cp.Maximize(cp.sqrt(x))
+        prob = cp.Problem(objective)
         assert objective.expr.is_hsr()
+        assert prob.is_dnlp()
 
     def test_simple_neg_expr(self):
         x = cp.Variable()
@@ -48,6 +52,7 @@ class TestDNLP():
         """
         x = cp.Variable()
         constraints = [cp.abs(x) >= 5]
+        # the expression is 5 + -abs(x)
         assert constraints[0].expr.is_hsr()
         assert not constraints[0].is_dnlp()
 
@@ -58,3 +63,17 @@ class TestDNLP():
 
         obj2 = cp.Minimize(cp.exp(cp.norm1(x)))
         assert obj2.is_dnlp()
+
+        expr = cp.sqrt(cp.abs(x))
+        assert not expr.is_dnlp()
+    
+    def test_complicated_composition(self):
+        x = cp.Variable()
+        y = cp.Variable()
+        expr = cp.minimum(cp.sqrt(cp.exp(x)), -cp.abs(y))
+        assert expr.is_hsr()
+
+        # cannot minimize an hsr function
+        obj = cp.Minimize(expr)
+        prob = cp.Problem(obj)
+        assert not prob.is_dnlp()
