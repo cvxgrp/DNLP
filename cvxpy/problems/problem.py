@@ -27,7 +27,6 @@ import cvxpy.utilities as u
 import cvxpy.utilities.performance_utils as perf
 from cvxpy import Constant, error
 from cvxpy import settings as s
-from cvxpy.atoms import NON_SMOOTH_ATOMS
 from cvxpy.atoms.atom import Atom
 from cvxpy.constraints import Equality, Inequality, NonNeg, NonPos, Zero
 from cvxpy.constraints.constraint import Constraint
