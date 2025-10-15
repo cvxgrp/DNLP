@@ -15,10 +15,10 @@ np.fill_diagonal(E, -2 + 1.5 * np.random.rand(n))
 rnom = 1 + 4 * np.random.rand(n)
 knom = 0.9 * rnom
 A = np.random.randn(n, m)
-l, u = np.log(0.8), np.log(1.2)
+lower, upper = np.log(0.8), np.log(1.2)
 
 # problem
-pi = cp.Variable(n, bounds=[l, u])
+pi = cp.Variable(n, bounds=[lower, upper])
 delta = cp.Variable(n)
 theta = cp.Variable(m)
 
