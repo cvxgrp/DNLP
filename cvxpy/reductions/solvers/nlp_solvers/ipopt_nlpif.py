@@ -263,14 +263,16 @@ class IPOPT(NLPsolver):
             self.grad_obj.fill(0)
 
             grad_offset = 0
-            grad_dict = self.problem.objective.expr.grad
+            grad_dict = self.problem.objective.expr.jacobian()
             for var in self.main_var:
                 size = var.size
                 if var in grad_dict:
-                    array = grad_dict[var]
-                    if sp.issparse(array):
-                        array = array.toarray().flatten(order='F')
-                    self.grad_obj[grad_offset:grad_offset+size] = array
+                    rows, cols, vals = grad_dict[var]
+                    grad = sp.coo_matrix((vals, (rows, cols)), shape=(1, size))
+                    vals = grad.T
+                    if sp.issparse(vals):
+                        vals = vals.toarray().flatten(order='F')
+                    self.grad_obj[grad_offset:grad_offset+size] = vals
                 grad_offset += size
 
             return self.grad_obj
