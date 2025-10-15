@@ -18,40 +18,40 @@ import numpy as np
 
 from cvxpy.expressions.constants import Constant
 from cvxpy.expressions.variable import Variable
+from cvxpy.utilities.power_tools import gm_constrs
 
 
 def power_canon(expr, args):
     x = args[0]
     p = expr.p_rational
-    
-    if p == 1:
-        return x, []
-
     shape = expr.shape
     ones = Constant(np.ones(shape))
     if p == 0:
         return ones, []
-    else:
+    if p == 1:
+        return x, []
+    # case for inv_pos
+    if p == -1:
         t = Variable(shape)
-        if 0 < p < 1:
-            raise NotImplementedError('This power is not yet supported.')
-        
-            # DCED: This is not a smooth implementation so we raise an error for now
-            #if x.value is not None:
-            #    t.value = np.power(np.abs(x.value), p)
-            #return t, [t**(1/p) == x, t >= 0]
-        elif p > 1:
+        return expr.copy([t]), [t == 1/x]
+    # case for square root, formulate hypograph
+    if 0 < p < 1:
+        w = expr.w
+        t = Variable(shape)
+        return t, gm_constrs(t, [x, ones], w)
+    # case for square, treated as smooth
+    elif p > 1:
+        t = Variable(shape)
+        if isinstance(args[0], Variable):
+            return expr.copy(args), []
 
-            if isinstance(args[0], Variable):
-                return expr.copy(args), []
+        t = Variable(args[0].shape)
 
-            t = Variable(args[0].shape)
-
-            if args[0].value is not None:
-                t.value = args[0].value
-            else:
-                t.value = expr.point_in_domain()
-
-            return expr.copy([t]), [t==args[0]]
+        if args[0].value is not None:
+            t.value = args[0].value
         else:
-            raise NotImplementedError('This power is not yet supported.')
+            t.value = expr.point_in_domain()
+
+        return expr.copy([t]), [t==args[0]]
+    else:
+        raise NotImplementedError(f'The power {p} is not yet supported.')

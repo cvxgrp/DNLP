@@ -15,6 +15,7 @@ limitations under the License.
 """
 from cvxpy.atoms.affine.sum import Sum
 from cvxpy.atoms.elementwise.power import power
+from cvxpy.expressions.variable import Variable
 from cvxpy.reductions.dnlp2smooth.canonicalizers.power_canon import power_canon
 
 
@@ -29,4 +30,15 @@ def quad_over_lin_canon(expr, args):
         summation = Sum(var)
         return summation, constr
     else:
-        assert(False)
+        t1 = args[0]
+        t2 = args[1]
+        constraints = []
+        if not isinstance(t1, Variable):
+            t1 = Variable(t1.shape)
+            constraints += [t1 == args[0]]
+            t1.value = args[0].value
+        if not isinstance(t2, Variable):
+            t2 = Variable(t2.shape)
+            constraints += [t2 == args[1]]
+            t2.value = args[1].value
+        return expr.copy([t1, t2]), constraints
