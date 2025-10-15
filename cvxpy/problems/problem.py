@@ -1198,7 +1198,7 @@ class Problem(u.Canonical):
                 self.unpack(chain.retrieve(soln))
                 return self.value
 
-        if nlp:
+        if nlp and self.is_dnlp():
             if type(self.objective) == Maximize:
                 reductions = [FlipObjective()]
             else:
@@ -1211,6 +1211,8 @@ class Problem(u.Canonical):
                                                         verbose, solver_opts=kwargs)
             self.unpack_results(solution, nlp_chain, inverse_data)
             return self.value
+        elif nlp and not self.is_dnlp():
+            raise error.DNLPError("The problem you specified is not DNLP.")
 
         data, solving_chain, inverse_data = self.get_problem_data(
             solver, gp, enforce_dpp, ignore_dpp, verbose, canon_backend, kwargs
