@@ -31,12 +31,6 @@ from cvxpy.reductions.dnlp2smooth.canonicalizers.quad_over_lin_canon import quad
 from cvxpy.reductions.dnlp2smooth.canonicalizers.div_canon import div_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.log_canon import log_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.exp_canon import exp_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers import norm1_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers.max_canon import max_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers.min_canon import min_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers.maximum_canon import maximum_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers.minimum_canon import minimum_canon
-from cvxpy.reductions.eliminate_pwl.canonicalizers.abs_canon import abs_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.multiply_canon import matmul_canon, multiply_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.pnorm_canon import pnorm_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.power_canon import power_canon
@@ -44,6 +38,13 @@ from cvxpy.reductions.dnlp2smooth.canonicalizers.entr_canon import entr_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.rel_entr_canon import rel_entr_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.kl_div_canon import kl_div_canon
 from cvxpy.reductions.dnlp2smooth.canonicalizers.trig_canon import cos_canon, sin_canon, tan_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.norm1_canon import norm1_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.max_canon import max_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.min_canon import min_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.maximum_canon import maximum_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.minimum_canon import minimum_canon
+from cvxpy.reductions.eliminate_pwl.canonicalizers.abs_canon import abs_canon
+
 
 SMOOTH_CANON_METHODS = {
     log: log_canon,

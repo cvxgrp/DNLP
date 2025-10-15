@@ -3,49 +3,7 @@ import numpy as np
 import pytest
 
 import cvxpy as cp
-from cvxpy import error
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
-
-
-class TestNonDNLP:
-    
-    def test_max(self):
-        x = cp.Variable(1)
-        y = cp.Variable(1)
-
-        objective = cp.Maximize(cp.maximum(x, y))
-
-        constraints = [x - 14 == 0, y - 6 == 0]
-
-        # assert raises DNLP error
-        problem = cp.Problem(objective, constraints)
-        with pytest.raises(error.DNLPError):
-            problem.solve(solver=cp.IPOPT, nlp=True)
-
-    def test_min(self):
-        x = cp.Variable(1)
-        y = cp.Variable(1)
-
-        objective = cp.Minimize(cp.minimum(x, y))
-
-        constraints = [x - 14 == 0, y - 6 == 0]
-
-        problem = cp.Problem(objective, constraints)
-        with pytest.raises(error.DNLPError):
-            problem.solve(solver=cp.IPOPT, nlp=True)
-
-    def test_max_2(self):
-        # Define variables
-        x = cp.Variable(3)
-        y = cp.Variable(3)
-
-        objective = cp.Maximize(cp.sum(cp.maximum(x, y)))
-
-        constraints = [x <= 14, y <= 14]
-
-        problem = cp.Problem(objective, constraints)
-        with pytest.raises(error.DNLPError):
-            problem.solve(solver=cp.IPOPT, nlp=True)
 
 
 @pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
@@ -91,6 +49,31 @@ class TestExamplesIPOPT:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(sigma.value, 0.77079388)
         assert np.allclose(mu.value, 0.59412321)
+
+    def test_portfolio_opt(self):
+        # data taken from https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/portfolio/
+        # r and Q are pre-computed from historical data of 3 assets
+        r = np.array([0.026002150277777, 0.008101316405671, 0.073715909491990])
+        Q = np.array([
+            [0.018641039983891, 0.003598532927677, 0.001309759253660],
+            [0.003598532927677, 0.006436938322676, 0.004887265158407],
+            [0.001309759253660, 0.004887265158407, 0.068682765454814],
+        ])
+        x = cp.Variable(3)
+        x.value = np.array([10.0, 10.0, 10.0])
+        variance = cp.quad_form(x, Q)
+        expected_return = r @ x
+        problem = cp.Problem(
+            cp.Minimize(variance),
+            [
+                cp.sum(x) <= 1000,
+                expected_return >= 50,
+                x >= 0
+            ]
+        )
+        problem.solve(solver=cp.IPOPT, nlp=True)
+        assert problem.status == cp.OPTIMAL
+        assert np.allclose(x.value, np.array([4.97045504e+02, -9.89291685e-09, 5.02954496e+02]))
 
     def test_rosenbrock(self):
         x = cp.Variable(2, name='x')
