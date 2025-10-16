@@ -488,28 +488,20 @@ class multiply(MulExpression):
             dy = y.jacobian()
             for k in dy:
                 rows, cols, vals = dy[k]
-                if x.value.size is not vals.size:
-                    # assert that vals.size are a multiple of x.value.size
-                    assert vals.size % x.value.size == 0
-                    values = np.repeat(x.value, vals.size // x.value.size) * vals
-                else:
-                    values = x.value * vals
-                dy[k] = (rows, cols, values)
+                # we index the y values by rows because the jacobian
+                # might have repeated row entries
+                # this is equivalent to forming the matrix defined
+                # rows, cols, vals and scaling each row i by y.value[i]
+                dy[k] = (rows, cols, y.value[rows] * vals)
             return dy
 
         if y.is_constant():
             dx = x.jacobian()
             for k in dx:
                 rows, cols, vals = dx[k]
-                if y.value.size is not vals.size:
-                    # assert that vals.size are a multiple of y.value.size
-                    assert vals.size % y.value.size == 0
-                    values = np.repeat(y.value, vals.size // y.value.size) * vals
-                else:
-                    values = y.value * vals
-                dx[k] = (rows, cols, values)
+                dx[k] = (rows, cols, y.value[rows] * vals)
             return dx
-        
+
         if not isinstance(x, Variable) and x.is_affine():
             assert(type(x) == Promote)
             x_var = x.args[0] # here x is a Promote because of how we canonicalize
