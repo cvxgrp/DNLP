@@ -9,10 +9,11 @@ This solves a nonlinear optimal control problem to maximize the cross-range
 constraints and thermal heating limits.
 """
 
-import cvxpy as cp
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.gridspec import GridSpec
+
+import cvxpy as cp
 
 # ============================================================================
 # Physical Constants and Parameters
