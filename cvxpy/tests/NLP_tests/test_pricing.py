@@ -4,13 +4,12 @@ import pytest
 import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
-np.random.seed(1)
-
 
 @pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
 class TestPricingProblem:
 
     def test_ccp_pricing(self):
+        np.random.seed(1)
         n = 1000
         m = 30
         E = -0.1 + 0.2 * np.random.rand(n, n)
@@ -28,9 +27,12 @@ class TestPricingProblem:
         pi.value = np.zeros(n)
         delta.value = np.zeros(n)
         theta.value = np.zeros(m)
-        obj = cp.sum(cp.multiply(rnom, cp.exp(delta + pi))) - cp.sum(cp.multiply(knom, cp.exp(delta)))
+        obj = (cp.sum(cp.multiply(rnom, cp.exp(delta + pi))) - 
+               cp.sum(cp.multiply(knom, cp.exp(delta))))
 
         print(obj.value)
         constr = [delta == E @ pi, pi == A @ theta]
         prob = cp.Problem(cp.Maximize(obj), constr)
         prob.solve(solver=cp.IPOPT, nlp=True, derivative_test='none', verbose=True)
+        assert prob.status == cp.OPTIMAL
+        assert np.allclose(prob.value, 341.017634)
