@@ -20,6 +20,7 @@ import numpy as np
 import scipy as scipy
 import scipy.sparse as sp
 
+from cvxpy.expressions.variable import Variable
 import cvxpy.utilities as u
 from cvxpy.atoms.atom import Atom
 from cvxpy.constraints.constraint import Constraint
@@ -154,3 +155,33 @@ class quad_over_lin(Atom):
         """Quadratic of piecewise affine if x is PWL and y is constant.
         """
         return self.args[0].is_pwl() and self.args[1].is_constant()
+
+    def _verify_hess_vec_args(self):
+        return isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable)
+
+    def _hess_vec(self, vec):
+        x = self.args[0]
+        y = self.args[1]
+        
+        idxs = np.arange(x.size)
+        zeros_x = np.zeros(x.size, dtype=int)
+        dx2_vals = vec * (2.0 * np.ones(x.size) / y.value)
+        dy2_vals = vec * 2.0 * (np.sum(x.value**2) / (y.value ** 3))
+        dxdy_vals = vec * -(2.0 * x.value / (y.value ** 2))
+        return {(x, x): (idxs, idxs, dx2_vals), 
+                (y, y): (np.array([0]), np.array([0]), np.atleast_1d(dy2_vals)),
+                (x, y): (idxs, zeros_x, dxdy_vals),
+                (y, x): (zeros_x, idxs, dxdy_vals)}
+
+    def _verify_jacobian_args(self):
+        return isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable)
+    
+    def _jacobian(self):
+        x = self.args[0]
+        y = self.args[1]
+
+        idxs = np.arange(x.size)
+        dx_vals = 2.0 * x.value / y.value
+        dy_vals = - np.sum(x.value**2) / (y.value ** 2)
+        return {x: (idxs, idxs, dx_vals), 
+                y: (np.array([0]), np.array([0]), np.atleast_1d(dy_vals))}

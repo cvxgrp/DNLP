@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import numpy as np
+
 from cvxpy.atoms.affine.sum import Sum
 from cvxpy.atoms.elementwise.power import power
 from cvxpy.expressions.variable import Variable
@@ -40,5 +42,6 @@ def quad_over_lin_canon(expr, args):
         if not isinstance(t2, Variable):
             t2 = Variable(t2.shape)
             constraints += [t2 == args[1]]
-            t2.value = args[1].value
+        
+        t2.value = np.ones(t2.shape)
         return expr.copy([t1, t2]), constraints
