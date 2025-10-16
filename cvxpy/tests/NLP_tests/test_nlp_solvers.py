@@ -141,6 +141,30 @@ class TestExamplesIPOPT:
         # Create and solve the problem
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=cp.IPOPT, nlp=True)
+        assert problem.status == cp.OPTIMAL
+        assert np.allclose(objective.value, -13.548638814247532)
+        assert np.allclose(x.value, [-3.87462191, -2.12978826,  2.33480343])
+        assert np.allclose(y.value, 5)
+
+    def test_portfolio_socp(self):
+        np.random.seed(858)
+        n = 100
+        x = cp.Variable(n, name='x')
+        mu = np.random.randn(n)
+        Sigma = np.random.randn(n, n)
+        Sigma = Sigma.T @ Sigma
+        gamma = 0.1
+        t = cp.Variable(name='t', bounds=[0, None])
+        L = np.linalg.cholesky(Sigma, upper=False)
+
+        objective = cp.Minimize(- mu.T @ x + gamma * t)
+        constraints = [cp.norm(L.T @ x, 2) <= t,
+                    cp.sum(x) == 1,
+                    x >= 0]
+        problem = cp.Problem(objective, constraints)
+        problem.solve(solver=cp.IPOPT, verbose=True, nlp=True)
+        assert problem.status == cp.OPTIMAL
+        assert np.allclose(problem.value, -1.93414338e+00)
 
 @pytest.mark.skip(reason='Solver is failing. Needs investigation.')
 class TestNonlinearControl:

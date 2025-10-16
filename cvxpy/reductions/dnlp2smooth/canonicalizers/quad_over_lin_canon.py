@@ -39,6 +39,8 @@ def quad_over_lin_canon(expr, args):
             t1 = Variable(t1.shape)
             constraints += [t1 == args[0]]
             t1.value = args[0].value
+        # maybe we should always introduce a new variable
+        # for the denominator to handle initialization
         if not isinstance(t2, Variable):
             t2 = Variable(t2.shape)
             constraints += [t2 == args[1]]

@@ -183,5 +183,5 @@ class quad_over_lin(Atom):
         idxs = np.arange(x.size)
         dx_vals = 2.0 * x.value / y.value
         dy_vals = - np.sum(x.value**2) / (y.value ** 2)
-        return {x: (idxs, idxs, dx_vals), 
+        return {x: (np.zeros(x.size), idxs, dx_vals), 
                 y: (np.array([0]), np.array([0]), np.atleast_1d(dy_vals))}
