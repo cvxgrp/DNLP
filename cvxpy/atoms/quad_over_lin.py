@@ -20,11 +20,11 @@ import numpy as np
 import scipy as scipy
 import scipy.sparse as sp
 
-from cvxpy.expressions.variable import Variable
 import cvxpy.utilities as u
 from cvxpy.atoms.atom import Atom
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.expressions.constants.parameter import is_param_free
+from cvxpy.expressions.variable import Variable
 
 
 class quad_over_lin(Atom):
