@@ -483,19 +483,31 @@ class multiply(MulExpression):
     def _jacobian(self):
         x = self.args[0]
         y = self.args[1]
-       
+
         if x.is_constant():
             dy = y.jacobian()
             for k in dy:
                 rows, cols, vals = dy[k]
-                dy[k] = (rows, cols, x.value * vals)
+                if x.value.size is not vals.size:
+                    # assert that vals.size are a multiple of x.value.size
+                    assert vals.size % x.value.size == 0
+                    values = np.repeat(x.value, vals.size // x.value.size) * vals
+                else:
+                    values = x.value * vals
+                dy[k] = (rows, cols, values)
             return dy
-            
+
         if y.is_constant():
             dx = x.jacobian()
             for k in dx:
                 rows, cols, vals = dx[k]
-                dx[k] = (rows, cols, y.value * vals)
+                if y.value.size is not vals.size:
+                    # assert that vals.size are a multiple of y.value.size
+                    assert vals.size % y.value.size == 0
+                    values = np.repeat(y.value, vals.size // y.value.size) * vals
+                else:
+                    values = y.value * vals
+                dx[k] = (rows, cols, values)
             return dx
         
         if not isinstance(x, Variable) and x.is_affine():
