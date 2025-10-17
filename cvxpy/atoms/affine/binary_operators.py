@@ -488,8 +488,6 @@ class multiply(MulExpression):
             dy = y.jacobian()
             for k in dy:
                 rows, cols, vals = dy[k]
-                # we index the y values by rows because the jacobian
-                # might have repeated row entries
                 # this is equivalent to forming the matrix defined
                 # rows, cols, vals and scaling each row i by y.value[i]
                 dy[k] = (rows, cols, np.atleast_1d(x.value)[rows] * vals)
