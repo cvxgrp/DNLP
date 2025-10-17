@@ -492,14 +492,14 @@ class multiply(MulExpression):
                 # might have repeated row entries
                 # this is equivalent to forming the matrix defined
                 # rows, cols, vals and scaling each row i by y.value[i]
-                dy[k] = (rows, cols, y.value[rows] * vals)
+                dy[k] = (rows, cols, np.atleast_1d(x.value)[rows] * vals)
             return dy
 
         if y.is_constant():
             dx = x.jacobian()
             for k in dx:
                 rows, cols, vals = dx[k]
-                dx[k] = (rows, cols, y.value[rows] * vals)
+                dx[k] = (rows, cols, np.atleast_1d(y.value)[rows] * vals)
             return dx
 
         if not isinstance(x, Variable) and x.is_affine():
