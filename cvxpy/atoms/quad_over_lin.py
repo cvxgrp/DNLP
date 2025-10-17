@@ -170,8 +170,8 @@ class quad_over_lin(Atom):
         dxdy_vals = vec * -(2.0 * x.value / (y.value ** 2))
         return {(x, x): (idxs, idxs, dx2_vals), 
                 (y, y): (np.array([0]), np.array([0]), np.atleast_1d(dy2_vals)),
-                (x, y): (idxs, zeros_x, dxdy_vals),
-                (y, x): (zeros_x, idxs, dxdy_vals)}
+                (x, y): (idxs, zeros_x, np.atleast_1d(dxdy_vals)),
+                (y, x): (zeros_x, idxs, np.atleast_1d(dxdy_vals))}
 
     def _verify_jacobian_args(self):
         return isinstance(self.args[0], Variable) and isinstance(self.args[1], Variable)

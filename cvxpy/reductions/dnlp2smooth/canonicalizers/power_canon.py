@@ -28,17 +28,15 @@ def power_canon(expr, args):
     ones = Constant(np.ones(shape))
     if p == 0:
         return ones, []
-    if p == 1:
+    elif p == 1:
         return x, []
     # case for inv_pos
-    if p == -1:
-        t = Variable(shape)
-        return expr.copy([t]), [t == 1/x]
+    elif p == -1:
+        raise NotImplementedError('The power -1 or inv_pos is not yet supported.')
     # case for square root, formulate hypograph
-    if 0 < p < 1:
-        w = expr.w
+    elif p == 0.5:
         t = Variable(shape)
-        return t, gm_constrs(t, [x, ones], w)
+        return t, [x >= t**2]
     # case for square, treated as smooth
     elif p > 1:
         t = Variable(shape)

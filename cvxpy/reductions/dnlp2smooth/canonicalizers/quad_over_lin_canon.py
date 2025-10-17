@@ -24,13 +24,14 @@ from cvxpy.reductions.dnlp2smooth.canonicalizers.power_canon import power_canon
 def quad_over_lin_canon(expr, args):
     """
     Canonicalize a quadratic over linear expression.
-    We use the base atoms power and div to do so.
+    If the denominator is constant, we can use the power canonicalizer.
+    Otherwise, we introduce new variables for the numerator and denominator.
     """
-    if args[1].is_constant() and args[1].value == 1:
+    if args[1].is_constant():
         expr = power(args[0], 2)
         var, constr = power_canon(expr, expr.args)
         summation = Sum(var)
-        return summation, constr
+        return 1/args[1].value * summation, constr
     else:
         t1 = args[0]
         t2 = args[1]
@@ -39,11 +40,9 @@ def quad_over_lin_canon(expr, args):
             t1 = Variable(t1.shape)
             constraints += [t1 == args[0]]
             t1.value = args[0].value
-        # maybe we should always introduce a new variable
-        # for the denominator to handle initialization
-        if not isinstance(t2, Variable):
-            t2 = Variable(t2.shape)
-            constraints += [t2 == args[1]]
-        
+        # always introduce a new variable for the denominator
+        # so that we can initialize it to 1 (point in domain)
+        t2 = Variable(t2.shape)
+        constraints += [t2 == args[1]]
         t2.value = np.ones(t2.shape)
         return expr.copy([t1, t2]), constraints
