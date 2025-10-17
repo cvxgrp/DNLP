@@ -225,7 +225,6 @@ class TestQuadOverLin_HessVec():
         [ 0.    ,  0.5   ,  0.    , -0.25  ],
         [ 0.    ,  0.    ,  0.5   , -0.375 ],
         [-0.125 , -0.25  , -0.375 ,  0.4375]])
-        It is a diagonal + rank-1 matrix.
        """
         x = cp.Variable((3,), name='x')
         x.value = np.array([1.0, 2.0, 3.0])
@@ -245,10 +244,13 @@ class TestQuadOverLin_HessVec():
         computed_hess = np.zeros((4, 4))
         rows, cols, vals = result_dict[(x, x)]
         computed_hess[rows, cols] = vals
+
         rows, cols, vals = result_dict[(y, y)]
         computed_hess[rows+3, cols+3] = vals
+
         rows, cols, vals = result_dict[(x, y)]
         computed_hess[rows, cols+3] = vals
+        
         rows, cols, vals = result_dict[(y, x)]
         computed_hess[rows+3, cols] = vals
         assert(np.allclose(computed_hess, H))

@@ -18,7 +18,6 @@ import numpy as np
 
 from cvxpy.expressions.constants import Constant
 from cvxpy.expressions.variable import Variable
-from cvxpy.utilities.power_tools import gm_constrs
 
 
 def power_canon(expr, args):
