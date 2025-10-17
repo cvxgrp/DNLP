@@ -166,6 +166,7 @@ class TestExamplesIPOPT:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(problem.value, -1.93414338e+00)
 
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
 class TestNonlinearControl:
     
     def test_clnlbeam(self):
