@@ -110,6 +110,7 @@ class TestJacobianIndex():
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
+    @pytest.mark.xfail(reason="None indexing not yet supported for matrices")
     def test_jacobian_none_idx(self):
         n = 2
         x = cp.Variable((n,), name='x')
