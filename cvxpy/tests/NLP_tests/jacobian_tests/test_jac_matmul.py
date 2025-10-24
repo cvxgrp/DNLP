@@ -271,10 +271,8 @@ class TestJacMatmul():
 
         expr = cp.exp(X) @ cp.log(X.T)
         with pytest.raises(ValueError):
-            result_dict = expr.jacobian()
-            # dummy to get rid of ruff issues
-            assert(len(result_dict)> -1)  
-    
+            expr.jacobian()
+            
     def test_matmul_same_variables_two(self):
         m, n, p = 2, 3, 2
         Y = cp.Variable((n, p), name='Y')
@@ -287,7 +285,6 @@ class TestJacMatmul():
 
         expr = cp.exp(X) @ (cp.log(Y) + cp.sin(X.T))
         with pytest.raises(ValueError):
-            result_dict = expr.jacobian()
-            # dummy to get rid of ruff issues
-            assert(len(result_dict)> -1)
+            expr.jacobian()
+          
         

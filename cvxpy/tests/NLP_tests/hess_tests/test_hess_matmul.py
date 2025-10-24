@@ -137,6 +137,4 @@ class TestHessVecMatmul():
         expr = X @ X
         lmbda = np.random.rand(m * m, 1)
         with pytest.raises(ValueError):
-            hess_dict = expr.hess_vec(lmbda) 
-            # dummy to get rid of ruff issues
-            assert(len(hess_dict)> -1)       
+            expr.hess_vec(lmbda) 
