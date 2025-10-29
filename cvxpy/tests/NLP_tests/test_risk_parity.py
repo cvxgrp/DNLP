@@ -71,6 +71,25 @@ class TestRiskParity:
         risk_contributions = np.array([np.sum(risk_contributions[g]) for g in groups])
         assert np.linalg.norm(risk_contributions - b) < 1e-5
 
-    # we do not expand the objective, and use square roots
-    def test_group_risk_parity_formulation_two(self):
-        pass
+    # other formulation
+    def test_group_risk_parity_formulation_two(self, Sigma):
+        n = 8
+        b = np.array([0.4, 0.6])
+        
+        w = cp.Variable((n, ), nonneg=True, name='w')
+        t = cp.Variable((n, ), name='t')
+        constraints = [cp.sum(w) == 1, t == Sigma @ w]
+        w.value = np.ones(n) / n
+        groups = [[0, 1, 5], [3, 4, 2, 6, 7]]
+
+        obj = 0
+        for k, g in enumerate(groups):
+            obj += cp.square(cp.sum(cp.multiply(w[g], t[g])) / cp.quad_form(w, Sigma) - b[k])
+
+        problem = cp.Problem(cp.Minimize(obj), constraints)
+        problem.solve(solver=cp.IPOPT, nlp=True, verbose=True, derivative_test='none')
+
+        risk_contributions = w.value * (Sigma @ w.value)
+        risk_contributions /= np.sum(risk_contributions)
+        risk_contributions = np.array([np.sum(risk_contributions[g]) for g in groups])
+        assert np.linalg.norm(risk_contributions - b) < 1e-5
