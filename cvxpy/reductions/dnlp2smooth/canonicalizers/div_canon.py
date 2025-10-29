@@ -50,7 +50,7 @@ def div_canon(expr, args):
         val = expr.point_in_domain()
     
     # dimension hack
-    if dim == ():
+    if dim == () and val.shape == (1,):
         z.value = val[0]
     else:
         z.value = val
