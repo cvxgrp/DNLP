@@ -114,7 +114,7 @@ class TestStressMLE():
 
                     problem = cp.Problem(cp.Minimize(obj), constraints)
                     problem.solve(solver=cp.IPOPT, nlp=True, hessian_approximation="exact",
-                                  derivative_test='none')
+                                  derivative_test='second-order')
                     print("sigma.value: ", sigma.value)
                     print("sigma_opt: ", sigma_opt)
                     assert(np.abs(sigma.value - sigma_opt) / np.max([1, np.abs(sigma_opt)]) <= TOL)
