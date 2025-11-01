@@ -21,7 +21,6 @@ from typing import List, Literal, Tuple
 
 import numpy as np
 
-from cvxpy.expressions.variable import Variable
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
 import cvxpy.settings as s
@@ -29,6 +28,7 @@ from cvxpy.atoms.affine.affine_atom import AffAtom
 from cvxpy.atoms.affine.hstack import hstack
 from cvxpy.constraints.constraint import Constraint
 from cvxpy.expressions.expression import DEFAULT_ORDER_DEPRECATION_MSG, Expression
+from cvxpy.expressions.variable import Variable
 from cvxpy.utilities.shape import size_from_shape
 
 
