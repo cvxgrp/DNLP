@@ -3,6 +3,7 @@ import numpy.linalg as LA
 import pytest
 
 import cvxpy as cp
+from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 np.random.seed(0)
 
@@ -19,6 +20,7 @@ def Sigma():
         [3.18,  2.17,  1.56,  3.6 ,  3.13,  3.26,  3.25, 13.63]
     ])
 
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
 class TestRiskParity:
     def test_vanilla_risk_parity_formulation_one(self, Sigma):
         n = 8
