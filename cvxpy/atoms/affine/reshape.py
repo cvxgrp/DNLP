@@ -21,6 +21,7 @@ from typing import List, Literal, Tuple
 
 import numpy as np
 
+from cvxpy.expressions.variable import Variable
 import cvxpy.lin_ops.lin_op as lo
 import cvxpy.lin_ops.lin_utils as lu
 import cvxpy.settings as s
@@ -154,6 +155,17 @@ class reshape(AffAtom):
                 result = lu.reshape(arg, shape[::-1])
                 return (lu.transpose(result), [])
 
+    def _verify_jacobian_args(self):
+        return isinstance(self.args[0], Variable)
+
+    def _jacobian(self):
+        return self.args[0].jacobian()
+
+    def _verify_hess_vec_args(self):
+        return isinstance(self.args[0], Variable)
+
+    def _hess_vec(self, vec):
+        return self.args[0].hess_vec(vec)
 
 def deep_flatten(x):
     # base cases

@@ -5,16 +5,19 @@ import cvxpy as cp
 
 # Number of buses
 N = 9
+
 # Real generation bounds
 P_Gen_lb = np.zeros(N)
 P_Gen_lb[[0, 1, 2]] = [10, 10, 10]
 P_Gen_ub = np.zeros(N)
 P_Gen_ub[[0, 1, 2]] = [250, 300, 270]
+
 # Reactive generation bounds
 Q_Gen_lb = np.zeros(N)
 Q_Gen_lb[[0, 1, 2]] = [-5, -5, -5]
 Q_Gen_ub = np.zeros(N)
 Q_Gen_ub[[0, 1, 2]] = [300, 300, 300]
+
 # Power demand (real and reactive)
 P_Demand = np.zeros(N)
 P_Demand[[4, 6, 8]] = [54, 60, 75]
@@ -59,53 +62,56 @@ Y_sh = diags(Y_sh_diag)
 Y = Y_0 + Y_sh
 Y_dense = Y.toarray()
 
-# Decision variables
-# Voltage: magnitude and angle for each bus
+# Extract conductance and susceptance matrices
+G = np.real(Y_dense)  # Conductance matrix
+B = np.imag(Y_dense)  # Susceptance matrix
+
+# Decision variables with bounds
+# Voltage magnitude and angle for each bus
 V_mag = cp.Variable(N, bounds=[0.9, 1.1])
 V_ang = cp.Variable(N)
 
 # Power generation: real and reactive
 P_G = cp.Variable(N, bounds=[P_Gen_lb, P_Gen_ub])
 Q_G = cp.Variable(N, bounds=[Q_Gen_lb, Q_Gen_ub])
+
+# Initialize variables (important for nonlinear problems)
+V_mag.value = np.ones(N)  # Start at 1.0 p.u.
+V_ang.value = np.zeros(N)  # Start at 0 degrees
+P_G.value = (P_Gen_lb + P_Gen_ub) / 2  # Start at midpoint
+Q_G.value = (Q_Gen_lb + Q_Gen_ub) / 2
+
 # Constraints list
 constraints = []
+
 # Reference bus (bus 1, index 0): fix angle to 0
 constraints.append(V_ang[0] == 0)
 
-# Power flow equations: S_G - S_Demand = V * conj(Y * V)
-# Breaking into real and imaginary parts:
-# P_G - P_Demand = Real(V * conj(Y * V))
-# Q_G - Q_Demand = Imag(V * conj(Y * V))
+# Power flow equations - fully vectorized
+# Create angle difference matrix: theta_diff[i,j] = theta_i - theta_j
+# Using cp.reshape with explicit order='F' for column-major
+V_ang_col = cp.reshape(V_ang, (N, 1), order='F')  # Shape (N, 1)
+V_ang_row = cp.reshape(V_ang, (1, N), order='F')  # Shape (1, N)
+theta_diff = V_ang_col - V_ang_row  # Shape (N, N)
 
-# For each bus i:
-# P_i = V_mag[i] * sum_j(V_mag[j] * (G[i,j]*cos(theta_i - theta_j) + B[i,j]*sin(theta_i - theta_j)))
-# Q_i = V_mag[i] * sum_j(V_mag[j] * (G[i,j]*sin(theta_i - theta_j) - B[i,j]*cos(theta_i - theta_j)))
+# Compute cos and sin of all angle differences
+cos_theta = cp.cos(theta_diff)  # Shape (N, N)
+sin_theta = cp.sin(theta_diff)  # Shape (N, N)
 
-G = np.real(Y_dense)  # Conductance matrix
-B = np.imag(Y_dense)  # Susceptance matrix
+# Compute the matrix products
+# G * cos(theta_diff) + B * sin(theta_diff) gives the real part coefficients
+# G * sin(theta_diff) - B * cos(theta_diff) gives the reactive part coefficients
+real_coeffs = cp.multiply(G, cos_theta) + cp.multiply(B, sin_theta)  # Element-wise
+reactive_coeffs = cp.multiply(G, sin_theta) - cp.multiply(B, cos_theta)
 
-# Compute voltage phasors in matrix form
-# V_mag is shape (N,), V_ang is shape (N,)
-# Create matrices for all pairwise angle differences
-theta_diff = V_ang[:, None] - V_ang[None, :]  # Shape (N, N)
+# For each bus i, compute: sum_j(V_mag[j] * coeffs[i,j])
+# This is matrix-vector multiplication: coeffs @ V_mag
+# Compute: V_mag[i] * sum_j(V_mag[j] * coeffs[i,j])
+# = V_mag[i] * (coeffs[i,:] @ V_mag)
+P_injection = cp.multiply(V_mag, real_coeffs @ V_mag)  # Shape (N,)
+Q_injection = cp.multiply(V_mag, reactive_coeffs @ V_mag)  # Shape (N,)
 
-# Vectorized power injection calculations
-# Real power injections for all buses
-cos_theta = cp.cos(theta_diff)
-sin_theta = cp.sin(theta_diff)
-
-P_injection = cp.multiply(
-    V_mag,
-    cp.sum(cp.multiply(V_mag[None, :], G @ cos_theta + B @ sin_theta), axis=1)
-)
-
-# Reactive power injections for all buses  
-Q_injection = cp.multiply(
-    V_mag,
-    cp.sum(cp.multiply(V_mag[None, :], G @ sin_theta - B @ cos_theta), axis=1)
-)
-
-# Add vectorized constraints
+# Power balance: Generation - Demand = Injection (vectorized for all buses)
 constraints.append(P_G - P_Demand == P_injection)
 constraints.append(Q_G - Q_Demand == Q_injection)
 
@@ -118,14 +124,20 @@ objective = cp.Minimize(
 
 # Create and solve problem
 problem = cp.Problem(objective, constraints)
-problem.solve(solver=cp.IPOPT, nlp=True, verbose=True,
-              derivative_test='second-order')
-              #fixed_variable_treatment='')
 
-print(f"\nOptimal objective value: {problem.value:.2f}")
+# Solve with IPOPT
+result = problem.solve(solver=cp.IPOPT, verbose=True, nlp=True)
+
+print(f"\nSolver status: {problem.status}")
+print(f"Optimal objective value: {problem.value:.2f}")
 print("\nGeneration (MW):")
-print(f"  Bus 1: P={P_G.value[0]:.2f}, Q={Q_G.value[0]:.2f}")
-print(f"  Bus 2: P={P_G.value[1]:.2f}, Q={Q_G.value[1]:.2f}")
-print(f"  Bus 3: P={P_G.value[2]:.2f}, Q={Q_G.value[2]:.2f}")
-print(f"\nVoltage magnitudes: {V_mag.value}")
-print(f"Voltage angles (deg): {np.rad2deg(V_ang.value)}")
+for i in range(3):
+    print(f"  Bus {i+1}: P={P_G.value[i]:.2f}, Q={Q_G.value[i]:.2f}")
+
+print("\nVoltage magnitudes (p.u.):")
+for i in range(N):
+    print(f"  Bus {i+1}: {V_mag.value[i]:.4f}")
+
+print("\nVoltage angles (degrees):")
+for i in range(N):
+    print(f"  Bus {i+1}: {np.rad2deg(V_ang.value[i]):.2f}")
