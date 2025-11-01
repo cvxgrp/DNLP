@@ -605,7 +605,6 @@ class Leaf(expression.Expression):
                     # necessary for NLP package extension and computing the structural jacobian
                     return val
                 else:
-                    return val
                     raise ValueError(
                        "%s value must be %s." % (self.__class__.__name__, attr_str)
                     )

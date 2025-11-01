@@ -72,8 +72,8 @@ V_mag = cp.Variable(N, bounds=[0.9, 1.1])
 V_ang = cp.Variable(N)
 
 # Power generation: real and reactive
-P_G = cp.Variable(N, bounds=[P_Gen_lb, P_Gen_ub])
-Q_G = cp.Variable(N, bounds=[Q_Gen_lb, Q_Gen_ub])
+P_G = cp.Variable(N)
+Q_G = cp.Variable(N)
 
 # Initialize variables (important for nonlinear problems)
 V_mag.value = np.ones(N)  # Start at 1.0 p.u.
@@ -83,7 +83,10 @@ Q_G.value = (Q_Gen_lb + Q_Gen_ub) / 2
 
 # Constraints list
 constraints = []
-
+constraints.append(P_G >= P_Gen_lb)
+constraints.append(P_G <= P_Gen_ub)
+constraints.append(Q_G >= Q_Gen_lb)
+constraints.append(Q_G <= Q_Gen_ub)
 # Reference bus (bus 1, index 0): fix angle to 0
 constraints.append(V_ang[0] == 0)
 
