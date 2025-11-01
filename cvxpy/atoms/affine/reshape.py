@@ -156,12 +156,16 @@ class reshape(AffAtom):
                 return (lu.transpose(result), [])
 
     def _verify_jacobian_args(self):
+        # only support order='F' for now
+        assert self.order == 'F', "Jacobian only supported for order='F'"
         return isinstance(self.args[0], Variable)
 
     def _jacobian(self):
         return self.args[0].jacobian()
 
     def _verify_hess_vec_args(self):
+        # only support order='F' for now
+        assert self.order == 'F', "Hessian-vector product only supported for order='F'"
         return isinstance(self.args[0], Variable)
 
     def _hess_vec(self, vec):
