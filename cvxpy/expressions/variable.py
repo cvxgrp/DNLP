@@ -71,6 +71,11 @@ class Variable(Leaf):
     def hess_vec(self, vec):
         return {}
 
+    def _jacobian(self):
+        rows = np.arange(self.size)
+        vals = np.ones(self.size)
+        return {self: (rows, rows, vals)}
+    
     def jacobian(self):
         rows = np.arange(self.size)
         vals = np.ones(self.size)
