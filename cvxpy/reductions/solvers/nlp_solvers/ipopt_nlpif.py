@@ -122,11 +122,10 @@ class IPOPT(NLPsolver):
             (status, optimal value, primal, equality dual, inequality dual)
         """
         import cyipopt
-        x0 = self.construct_initial_point(data)
         # Create oracles object
-        oracles = self.Oracles(data["problem"], x0, len(data["cl"]))
+        oracles = self.Oracles(data["problem"], data["x0"], len(data["cl"]))
         nlp = cyipopt.Problem(
-        n=len(x0),
+        n=len(data["x0"]),
         m=len(data["cl"]),
         problem_obj=oracles,
         lb=data["lb"],
@@ -152,7 +151,7 @@ class IPOPT(NLPsolver):
         for option_name, option_value in default_options.items():
             nlp.add_option(option_name, option_value)
 
-        _, info = nlp.solve(x0)
+        _, info = nlp.solve(data["x0"])
 
         # add number of iterations to info dict from oracles
         info['iterations'] = oracles.iterations
@@ -167,37 +166,6 @@ class IPOPT(NLPsolver):
             Data generated via an apply call.
         """
         return CITATION_DICT["IPOPT"]
-    
-    def construct_initial_point(self, data):
-        initial_values = []
-        offset = 0
-        lbs = data["lb"]
-        ubs = data["ub"]
-        for var in data["problem"].variables():
-            if var.value is not None:
-                initial_values.append(np.atleast_1d(var.value).flatten(order='F'))
-            else:
-                # If no initial value is specified, look at the bounds.
-                # If both lb and ub are specified, we initialize the
-                # variables to be their midpoints. If only one of them 
-                # is specified, we initialize the variable one unit 
-                # from the bound. If none of them is specified, we 
-                # initialize it to zero.
-                lb = lbs[offset:offset + var.size]
-                ub = ubs[offset:offset + var.size]
-                lb_finite = np.isfinite(lb)
-                ub_finite = np.isfinite(ub)
-                # Replace infs with zero for arithmetic
-                lb0 = np.where(lb_finite, lb, 0.0)
-                ub0 = np.where(ub_finite, ub, 0.0)
-                # Midpoint if both finite, one from bound if only one finite, zero if none
-                init = (lb_finite * ub_finite * 0.5 * (lb0 + ub0) +
-                        lb_finite * (~ub_finite) * (lb0 + 1.0) +
-                        (~lb_finite) * ub_finite * (ub0 - 1.0))
-                initial_values.append(init)
-            offset += var.size
-        x0 = np.concatenate(initial_values, axis=0)
-        return x0
 
     class Oracles():
         def __init__(self, problem, initial_point, num_constraints):
@@ -264,7 +232,6 @@ class IPOPT(NLPsolver):
             constraint_values = []
             for constraint in self.problem.constraints:
                 constraint_values.append(np.asarray(constraint.args[0].value).flatten(order='F'))
-            
             return np.concatenate(constraint_values)
 
         def parse_jacobian_dict(self, grad_dict, constr_offset, is_affine):
@@ -328,7 +295,6 @@ class IPOPT(NLPsolver):
                 vals = self.insert_missing_zeros_jacobian()
             else:
                 vals = self.jacobian_coo[2]
-        
             return vals
             
         def jacobianstructure(self):
@@ -441,7 +407,6 @@ class IPOPT(NLPsolver):
                 vals = self.insert_missing_zeros_hessian()
             else:
                 vals = self.hess_lagrangian_coo[2]
-            
             return vals
 
         def intermediate(self, alg_mod, iter_count, obj_value, inf_pr, inf_du, mu,

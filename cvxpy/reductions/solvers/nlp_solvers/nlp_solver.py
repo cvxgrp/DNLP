@@ -65,7 +65,7 @@ class NLPsolver(Solver):
         data["problem"] = bounds.new_problem
         data["cl"], data["cu"] = bounds.cl, bounds.cu
         data["lb"], data["ub"] = bounds.lb, bounds.ub
-
+        data["x0"] = bounds.x0
         inverse_data.offset = 0.0
         return problem, data, inverse_data
 
@@ -75,9 +75,15 @@ class Bounds():
         self.main_var = problem.variables()
         self.get_constraint_bounds()
         self.get_variable_bounds()
+        self.construct_initial_point()
 
     def get_constraint_bounds(self):
-        """Also normalizes the constraints and creates a new problem"""
+        """
+        Get constraint bounds for all constraints.
+        Also converts inequalities to nonneg form,
+        as well as equalities to zero constraints and forms
+        a new problem from the canonicalized problem.
+        """
         lower, upper = [], []
         new_constr = []
         for constraint in self.problem.constraints:
@@ -99,6 +105,10 @@ class Bounds():
         self.cu = np.array(upper)
 
     def get_variable_bounds(self):
+        """
+        Get variable bounds for all variables.
+        Also takes into account nonneg/nonpos attributes.
+        """
         var_lower, var_upper = [], []
         for var in self.main_var:
             size = var.size
@@ -124,3 +134,36 @@ class Bounds():
                     var_upper.extend([np.inf] * size)
         self.lb = np.array(var_lower)
         self.ub = np.array(var_upper)
+    
+    def construct_initial_point(self):
+        """
+        Constructs an initial point for the optimization problem.
+        If no initial value is specified, look at the bounds.
+        If both lb and ub are specified, we initialize the
+        variables to be their midpoints. If only one of them
+        is specified, we initialize the variable one unit
+        from the bound. If none of them is specified, we
+        initialize it to zero.
+        """
+        initial_values = []
+        offset = 0
+        lbs = self.lb
+        ubs = self.ub
+        for var in self.problem.variables():
+            if var.value is not None:
+                initial_values.append(np.atleast_1d(var.value).flatten(order='F'))
+            else:
+                lb = lbs[offset:offset + var.size]
+                ub = ubs[offset:offset + var.size]
+                lb_finite = np.isfinite(lb)
+                ub_finite = np.isfinite(ub)
+                # Replace infs with zero for arithmetic
+                lb0 = np.where(lb_finite, lb, 0.0)
+                ub0 = np.where(ub_finite, ub, 0.0)
+                # Midpoint if both finite, one from bound if only one finite, zero if none
+                init = (lb_finite * ub_finite * 0.5 * (lb0 + ub0) +
+                        lb_finite * (~ub_finite) * (lb0 + 1.0) +
+                        (~lb_finite) * ub_finite * (ub0 - 1.0))
+                initial_values.append(init)
+            offset += var.size
+        self.x0 = np.concatenate(initial_values, axis=0)
