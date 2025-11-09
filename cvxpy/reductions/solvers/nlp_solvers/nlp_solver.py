@@ -37,12 +37,13 @@ class NLPsolver(Solver):
     # Some solvers cannot solve problems that do not have constraints.
     # For such solvers, REQUIRES_CONSTR should be set to True.
     REQUIRES_CONSTR = False
-
-    IS_MIP = "IS_MIP"
+    MIP_CAPABLE = False
 
     def accepts(self, problem):
-        # can accept everything?
-        return True
+        """
+        Only accepts disciplined nonlinear programs.
+        """
+        return problem.is_dnlp()
 
     def apply(self, problem):
         """
