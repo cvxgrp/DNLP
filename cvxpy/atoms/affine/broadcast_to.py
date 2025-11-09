@@ -146,7 +146,7 @@ class broadcast_to(AffAtom):
         m, n = self.broadcast_shape
        
         if self.broadcast_type == "row":
-            jac_x_dict = self.args[0]._jacobian()
+            jac_x_dict = self.args[0].jacobian()
             for key in jac_x_dict:
                 rows, cols, vals = jac_x_dict[key]
                 rows = np.repeat(rows * m, m) + np.tile(np.arange(m), len(rows))
@@ -155,7 +155,7 @@ class broadcast_to(AffAtom):
                 jac_x_dict[key] = (rows, cols, vals)
             return jac_x_dict
         elif self.broadcast_type == "col":
-            jac_x_dict = self.args[0]._jacobian()
+            jac_x_dict = self.args[0].jacobian()
             for key in jac_x_dict:
                 rows, cols, vals = jac_x_dict[key]
                 rows = np.repeat(rows, n) + np.tile(np.arange(n) * m, len(rows))
@@ -164,7 +164,7 @@ class broadcast_to(AffAtom):
                 jac_x_dict[key] = (rows, cols, vals)
             return jac_x_dict
         elif self.broadcast_type == "scalar":
-            jac_x_dict = self.args[0]._jacobian()
+            jac_x_dict = self.args[0].jacobian()
             for key in jac_x_dict:
                 rows, cols, vals = jac_x_dict[key]
                 rows = np.tile(np.arange(m * n), len(rows))
