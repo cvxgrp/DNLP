@@ -34,8 +34,6 @@ class NLPsolver(Solver):
     """
     A non-linear programming (NLP) solver.
     """
-    # Some solvers cannot solve problems that do not have constraints.
-    # For such solvers, REQUIRES_CONSTR should be set to True.
     REQUIRES_CONSTR = False
     MIP_CAPABLE = False
 
