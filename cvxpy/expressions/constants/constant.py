@@ -123,6 +123,9 @@ class Constant(Leaf):
         In particular, when the objective is a constant.
         """
         return {}
+    
+    def jacobian(self):
+        return {}
 
     @property
     def shape(self) -> Tuple[int, ...]:
