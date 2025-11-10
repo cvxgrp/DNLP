@@ -206,7 +206,9 @@ class TestExamplesIPOPT:
                              [ 1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    # using norm_inf
+    # using norm_inf (This test revealed a very subtle bug in the unpacking of 
+    # the ipopt solution. Some variables were mistakenly reordered. It was fixed 
+    # in https://github.com/cvxgrp/cvxpy-ipopt/pull/82)
     def test_circle_packing_formulation_two(self):
         rng = np.random.default_rng(5)
         n = 3
