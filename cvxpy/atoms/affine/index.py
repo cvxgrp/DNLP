@@ -165,9 +165,7 @@ class special_index(AffAtom):
         expr = index.cast_to_const(expr)
         idxs = np.arange(expr.size)
         idx_mat = np.reshape(idxs, expr.shape, order='F')
-        idx_mat_C = np.reshape(idxs, expr.shape, order='C')
         self._select_mat = idx_mat[key]
-        self._select_mat_C = idx_mat_C[key]
         self._shape = self._select_mat.shape
         super(special_index, self).__init__(expr)
 
