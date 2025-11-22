@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import numpy as np
-import scipy.sparse as sp
 
 import cvxpy.settings as s
 from cvxpy.reductions.solution import Solution, failure_solution
