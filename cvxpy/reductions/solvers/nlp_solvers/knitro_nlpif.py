@@ -140,7 +140,21 @@ class KNITRO(NLPsolver):
         Parameters
         ----------
         data : dict
-            Data used by the solver.
+        Data used by the solver.
+        This consists of:
+        - "oracles": An Oracles object that computes the objective and constraints
+        - "x0": Initial guess for the primal variables
+        - "lb": Lower bounds on the primal variables
+        - "ub": Upper bounds on the primal variables
+        - "cl": Lower bounds on the constraints
+        - "cu": Upper bounds on the constraints
+        - "objective": Function to compute the objective value
+        - "gradient": Function to compute the objective gradient
+        - "constraints": Function to compute the constraint values
+        - "jacobian": Function to compute the constraint Jacobian
+        - "jacobianstructure": Function to compute the structure of the Jacobian
+        - "hessian": Function to compute the Hessian of the Lagrangian
+        - "hessianstructure": Function to compute the structure of the Hessian
         warm_start : bool
             Not used.
         verbose : bool
