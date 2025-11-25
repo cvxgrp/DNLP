@@ -28,7 +28,7 @@ def geo_mean_canon(expr, args):
     We reformulate geo_mean(x) as exp(1/n * sum(log(x)))
     to form a diagonal hessian instead of a dense one.
     """
-    t = Variable(args[0].shape, nonneg=True)
+    t = Variable(expr.shape, nonneg=True)
 
     if args[0].value is not None:
         t.value = expr.numeric(args[0].value)
@@ -38,4 +38,4 @@ def geo_mean_canon(expr, args):
     if expr.p is None:
         return t, [log(t) == 1/expr.size * sum(log(args[0]))]
     else:
-        return t, [log(t) == multiply(expr.p,log(args[0]))]
+        return t, [log(t) == multiply(expr.p/sum(expr.p), log(args[0]))]
