@@ -16,6 +16,7 @@ limitations under the License.
 
 import numpy as np
 
+from cvxpy.atoms.affine.binary_operators import multiply
 from cvxpy.atoms.affine.sum import sum
 from cvxpy.atoms.elementwise.log import log
 from cvxpy.expressions.variable import Variable
@@ -28,10 +29,13 @@ def geo_mean_canon(expr, args):
     to form a diagonal hessian instead of a dense one.
     """
     t = Variable(args[0].shape, nonneg=True)
-    
+
     if args[0].value is not None:
         t.value = expr.numeric(args[0].value)
     else:
         t.value = np.ones(expr.shape)
 
-    return t, [log(t) == 1/expr.size * sum(log(args[0]))]
+    if expr.p is None:
+        return t, [log(t) == 1/expr.size * sum(log(args[0]))]
+    else:
+        return t, [log(t) == multiply(expr.p,log(args[0]))]
