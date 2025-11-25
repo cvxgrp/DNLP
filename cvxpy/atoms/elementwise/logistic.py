@@ -116,3 +116,6 @@ class logistic(Elementwise):
         exp_x = np.exp(x.value.flatten(order='F'))
         vals = exp_x / (1 + exp_x)
         return {x: (idxs, idxs, vals)}
+
+    def point_in_domain(self):
+        return np.zeros(self.shape)
