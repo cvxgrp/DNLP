@@ -30,3 +30,24 @@ class TestJacTranspose():
         rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
         assert(np.allclose(computed_jacobian, correct_jacobian_xx))
+
+    def test_mat(self):
+        n = 3
+        m = 2
+        x = cp.Variable((3, 2), name='x')
+        x.value = np.array([[1.0, 2.0,], [3.0, 4.0], [5.0, 6.0]])
+        expr = cp.log(x).T
+        result_dict = expr.jacobian()
+        correct_jacobian = np.array([[1., 0., 0., 0., 0., 0.,],
+                                     [0., 0., 0.2, 0., 0., 0.,],
+                                     [0., 0., 0., 0., 0.25, 0.,],
+                                     [0., 0.33333333, 0., 0., 0., 0.,],
+                                     [0., 0., 0., 0.5, 0., 0.,],
+                                     [0., 0., 0., 0., 0., 0.16666667]])
+
+        
+        computed_jacobian = np.zeros((n * m, n * m))
+        rows, cols, vals = result_dict[x]
+        computed_jacobian[rows, cols] = vals
+        print(computed_jacobian)
+        assert(np.allclose(computed_jacobian, correct_jacobian))
