@@ -18,10 +18,12 @@ import numpy as np
 
 from cvxpy.expressions.variable import Variable
 
+# DCED: Without this lower bound the stress test for ML Gaussian non-zero mean fails.
+# Perhaps this should be a parameter exposed to the user?
 LOWER_BOUND = 1e-5
 
 def log_canon(expr, args):
-    t = Variable(args[0].shape, bounds=[0, None])
+    t = Variable(args[0].shape, bounds=[LOWER_BOUND, None])
 
     if args[0].value is not None and np.min(args[0].value) > 5 * LOWER_BOUND:
         t.value = args[0].value
