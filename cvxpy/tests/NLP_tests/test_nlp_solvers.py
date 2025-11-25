@@ -227,7 +227,6 @@ class TestExamplesIPOPT:
         prob.solve(solver=cp.IPOPT, nlp=True, verbose=True, derivative_test='none',
                     least_square_init_duals='no')
 
-
         true_sol = np.array([[ 1.73655994, -1.98685738,  2.57208783],  
                              [ 1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
@@ -251,10 +250,19 @@ class TestExamplesIPOPT:
         prob.solve(solver=cp.IPOPT, nlp=True, verbose=True, derivative_test='none',
                     least_square_init_duals='no')
 
-
         true_sol = np.array([[ 1.73655994, -1.98685738,  2.57208783],  
                              [ 1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
+
+    def test_geo_mean(self):
+        x = cp.Variable(3, pos=True)
+        geo_mean = cp.geo_mean(x)
+        objective = cp.Maximize(geo_mean)
+        constraints = [cp.sum(x) == 1]
+        problem = cp.Problem(objective, constraints)
+        problem.solve(solver=cp.IPOPT, nlp=True)
+        assert problem.status == cp.OPTIMAL
+        assert np.allclose(x.value, np.array([1, 1, 1]))
 
 
 @pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
