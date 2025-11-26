@@ -118,7 +118,7 @@ class transpose(AffAtom):
 
     def _hess_vec(self, vec):
         hess = self.args[0].hess_vec(
-            vec.reshape((self.args[0].shape), order='F').T.reshape(-1, order='F')
+            vec.reshape((self.shape), order='F').T.reshape(-1, order='F')
         )
         return hess
 
@@ -127,7 +127,7 @@ class transpose(AffAtom):
         jac = self.args[0].jacobian()
         for k, (rows, cols, vals) in jac.items():
             mapping = np.arange(self.size).reshape(
-                    self.args[0].shape, order='F').T.reshape(-1, order='F')
+                    self.shape, order='F').T.reshape(-1, order='F')
             reshaped_rows = mapping[rows]
             jac[k] = (reshaped_rows, cols, vals)
         return jac
