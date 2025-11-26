@@ -39,15 +39,16 @@ class TestJacTranspose():
         expr = cp.log(x).T
         result_dict = expr.jacobian()
         correct_jacobian = np.array([[1., 0., 0., 0., 0., 0.,],
-                                     [0., 0., 0.2, 0., 0., 0.,],
-                                     [0., 0., 0., 0., 0.25, 0.,],
-                                     [0., 0.33333333, 0., 0., 0., 0.,],
                                      [0., 0., 0., 0.5, 0., 0.,],
+                                     [0., 0.33333333, 0., 0., 0., 0.,],
+                                     [0., 0., 0., 0., 0.25, 0.,],
+                                     [0., 0., 0.2, 0., 0., 0.,],
                                      [0., 0., 0., 0., 0., 0.16666667]])
 
         computed_jacobian = np.zeros((n * m, n * m))
         rows, cols, vals = result_dict[x]
         computed_jacobian[rows, cols] = vals
+        print(computed_jacobian)
         assert(np.allclose(computed_jacobian, correct_jacobian))
 
     def test_nondiagonal(self):
