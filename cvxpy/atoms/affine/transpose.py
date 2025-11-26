@@ -120,11 +120,6 @@ class transpose(AffAtom):
         hess = self.args[0].hess_vec(
             vec.reshape((self.args[0].shape), order='F').T.reshape(-1, order='F')
         )
-        for k, (rows, cols, vals) in hess.items():
-            mapping = np.arange(self.size).reshape(
-                    self.args[0].shape, order='F').T.reshape(-1, order='F')
-            reshaped_rows = mapping[rows]
-            hess[k] = (reshaped_rows, cols, vals)
         return hess
 
 

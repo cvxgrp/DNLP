@@ -98,7 +98,7 @@ class logistic(Elementwise):
         """ See the docstring of the hess_vec method of the atom class. """
         x = self.args[0]
         idxs = np.arange(x.size)
-        exp_x = np.exp(x.value)
+        exp_x = np.exp(x.value.flatten(order='F'))
         vals = exp_x / (exp_x + 1)**2 * vec
         return {(x, x): (idxs, idxs, np.atleast_1d(vals))}
 
