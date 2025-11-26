@@ -266,12 +266,12 @@ class MulExpression(BinaryOperator):
         _, p = self.get_dimensions(Y)
 
         if X.is_constant():
-            B = X.value.T @ np.reshape(vec, (m, p), order='C')
+            B = X.value.T @ np.reshape(vec, (m, p), order='F')
             hess_dict = Y.hess_vec(B.flatten(order='F'))
             return hess_dict 
             
         if Y.is_constant():
-            B = np.reshape(vec, (m, p), order='C') @ Y.value.T
+            B = np.reshape(vec, (m, p), order='F') @ Y.value.T
             hess_dict = X.hess_vec(B.flatten(order='F'))
             return hess_dict
 
