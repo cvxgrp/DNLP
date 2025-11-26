@@ -266,7 +266,8 @@ class TestExamplesIPOPT:
 
     def test_geo_mean2(self):
         """
-        This test doesn't converge to the optimal solution
+        This test doesn't converge to the global optimal solution
+        which is x^* = p/sum(p),
         but atleast there are no errors in the derivative computations.
         """
         p = np.array([.07, .12, .23, .19, .39])
