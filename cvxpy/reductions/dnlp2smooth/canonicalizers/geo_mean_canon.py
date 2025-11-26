@@ -17,7 +17,6 @@ limitations under the License.
 import numpy as np
 
 from cvxpy.atoms.affine.binary_operators import multiply
-from cvxpy.atoms.affine.sum import sum
 from cvxpy.atoms.elementwise.log import log
 from cvxpy.expressions.variable import Variable
 
