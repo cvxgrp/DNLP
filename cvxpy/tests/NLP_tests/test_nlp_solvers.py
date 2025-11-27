@@ -271,12 +271,12 @@ class TestExamplesIPOPT:
         but atleast there are no errors in the derivative computations.
         """
         p = np.array([.07, .12, .23, .19, .39])
-        x = cp.Variable(5)
+        x = cp.Variable(5, nonneg=True)
         prob = cp.Problem(cp.Maximize(cp.geo_mean(x, p)), [cp.sum(x) <= 1])
         prob.solve(solver=cp.IPOPT, nlp=True)
-        x = np.array(x.value).flatten()
-        #x_true = p/sum(p)
+        x_true = p/sum(p)
         assert prob.status == cp.OPTIMAL
+        assert np.allclose(x.value, x_true)
 
 
 @pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')

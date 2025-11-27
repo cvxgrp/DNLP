@@ -17,6 +17,7 @@ limitations under the License.
 import numpy as np
 
 from cvxpy.atoms.affine.binary_operators import multiply
+from cvxpy.atoms.affine.sum import sum
 from cvxpy.atoms.elementwise.log import log
 from cvxpy.expressions.variable import Variable
 from cvxpy.reductions.dnlp2smooth.canonicalizers.log_canon import log_canon
@@ -38,4 +39,4 @@ def geo_mean_canon(expr, args):
     weights = np.array([float(w) for w in expr.w])
     log_expr = log(args[0])
     var, constr = log_canon(log_expr, [args[0]])
-    return t, [log(t) == multiply(weights, var)] + constr
+    return t, [log(t) == sum(multiply(weights, var))] + constr
