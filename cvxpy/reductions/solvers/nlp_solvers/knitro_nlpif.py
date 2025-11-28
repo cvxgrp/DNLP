@@ -388,14 +388,12 @@ class KNITRO(NLPsolver):
             # Map common string option names to KNITRO parameter constants
             OPTION_MAP = {
                 'algorithm': knitro.KN_PARAM_ALGORITHM,
-                'feastol': knitro.KN_PARAM_FEASTOL,
-                'opttol': knitro.KN_PARAM_OPTTOL,
                 'maxit': knitro.KN_PARAM_MAXIT,
                 'outlev': knitro.KN_PARAM_OUTLEV,
                 'hessopt': knitro.KN_PARAM_HESSOPT,
                 'gradopt': knitro.KN_PARAM_GRADOPT,
-                'feastolabs': knitro.KN_PARAM_FEASTOLABS,
-                'opttolabs': knitro.KN_PARAM_OPTTOLABS,
+                'feastol': knitro.KN_PARAM_FEASTOL,
+                'opttol': knitro.KN_PARAM_OPTTOL,
             }
 
             if solver_opts:

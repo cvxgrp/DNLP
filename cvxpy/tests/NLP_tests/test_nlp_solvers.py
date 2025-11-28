@@ -44,8 +44,7 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(x.value, np.array([0.75450865, 4.63936861, 3.78856881, 1.88513184]),
-                           atol=1e-4)
+        assert np.allclose(x.value, np.array([0.75450865, 4.63936861, 3.78856881, 1.88513184]))
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_mle(self, solver_name):
@@ -69,8 +68,8 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(sigma.value, 0.77079388, atol=1e-4)
-        assert np.allclose(mu.value, 0.59412321, atol=1e-4)
+        assert np.allclose(sigma.value, 0.77079388)
+        assert np.allclose(mu.value, 0.59412321)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_portfolio_opt(self, solver_name):
@@ -108,7 +107,7 @@ class TestNLPExamples:
         problem = cp.Problem(objective, [])
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(x.value, np.array([1.0, 1.0]), atol=1e-4)
+        assert np.allclose(x.value, np.array([1.0, 1.0]))
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_qcp(self, solver_name):
@@ -127,9 +126,9 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(x.value, np.array([0.32699284]), atol=1e-4)
-        assert np.allclose(y.value, np.array([0.25706586]), atol=1e-4)
-        assert np.allclose(z.value, np.array([0.4159413]), atol=1e-4)
+        assert np.allclose(x.value, np.array([0.32699284]))
+        assert np.allclose(y.value, np.array([0.25706586]))
+        assert np.allclose(z.value, np.array([0.4159413]))
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_analytic_polytope_center(self, solver_name):
@@ -171,9 +170,9 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(objective.value, -13.548638814247532, atol=1e-3)
-        assert np.allclose(x.value, [-3.87462191, -2.12978826, 2.33480343], atol=1e-3)
-        assert np.allclose(y.value, 5, atol=1e-4)
+        assert np.allclose(objective.value, -13.548638814247532)
+        assert np.allclose(x.value, [-3.87462191, -2.12978826, 2.33480343])
+        assert np.allclose(y.value, 5)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_portfolio_socp(self, solver_name):
@@ -195,7 +194,7 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(problem.value, -1.93414338e+00, atol=1e-3)
+        assert np.allclose(problem.value, -1.93414338e+00)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_localization(self, solver_name):
@@ -213,7 +212,7 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(x.value, x_true, atol=1e-3)
+        assert np.allclose(x.value, x_true)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_circle_packing_formulation_one(self, solver_name):
@@ -239,7 +238,7 @@ class TestNLPExamples:
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
-        assert np.allclose(centers.value, true_sol, atol=1e-4)
+        assert np.allclose(centers.value, true_sol)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_circle_packing_formulation_two(self, solver_name):
@@ -265,7 +264,7 @@ class TestNLPExamples:
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
-        assert np.allclose(centers.value, true_sol, atol=1e-4)
+        assert np.allclose(centers.value, true_sol)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_circle_packing_formulation_three(self, solver_name):
@@ -289,7 +288,7 @@ class TestNLPExamples:
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
-        assert np.allclose(centers.value, true_sol, atol=1e-4)
+        assert np.allclose(centers.value, true_sol)
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_geo_mean(self, solver_name):
@@ -301,7 +300,7 @@ class TestNLPExamples:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(x.value, np.array([1/3, 1/3, 1/3]), atol=1e-4)
+        assert np.allclose(x.value, np.array([1/3, 1/3, 1/3]))
 
     @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
     def test_geo_mean2(self, solver_name):
@@ -317,7 +316,7 @@ class TestNLPExamples:
         prob.solve(solver=solver, nlp=True)
         x_true = p/sum(p)
         assert prob.status == cp.OPTIMAL
-        assert np.allclose(x.value, x_true, atol=1e-4)
+        assert np.allclose(x.value, x_true)
 
 
 @pytest.mark.skipif(len(NLP_SOLVERS) == 0, reason='No NLP solvers installed.')
@@ -354,4 +353,4 @@ class TestNonlinearControl:
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
-        assert np.allclose(problem.value, 3.500e+02, atol=1e-1)
+        assert np.allclose(problem.value, 3.500e+02)
