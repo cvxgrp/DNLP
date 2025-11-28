@@ -390,7 +390,10 @@ class TestIPOPT:
         StandardNLPTests.test_clnlbeam(solver='IPOPT')
 
 
-@pytest.mark.skipif(not is_knitro_available(), reason='KNITRO is not installed or license not available.')
+@pytest.mark.skipif(
+    not is_knitro_available(),
+    reason='KNITRO is not installed or license not available.'
+)
 class TestKNITRO:
     """KNITRO NLP solver tests."""
 
