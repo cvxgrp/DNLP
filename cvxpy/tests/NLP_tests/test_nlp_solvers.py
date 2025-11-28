@@ -6,7 +6,6 @@ import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 from cvxpy.tests.test_conic_solvers import is_knitro_available
 
-
 # Always parametrize both solvers, skip at runtime if not available
 NLP_SOLVERS = [
     pytest.param('IPOPT', marks=pytest.mark.skipif(
