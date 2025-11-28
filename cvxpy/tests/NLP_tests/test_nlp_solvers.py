@@ -1,34 +1,16 @@
 
-import os
-
 import numpy as np
 import pytest
 
 import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
-
-
-def is_ipopt_available():
-    """Check if IPOPT is installed."""
-    return 'IPOPT' in INSTALLED_SOLVERS
-
-
-def is_knitro_available():
-    """Check if KNITRO is installed and a license is available."""
-    if 'KNITRO' not in INSTALLED_SOLVERS:
-        return False
-    # Only run KNITRO tests if license env var is explicitly set
-    # This prevents hanging in CI when KNITRO is installed but not licensed
-    return bool(
-        os.environ.get('ARTELYS_LICENSE') or
-        os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR')
-    )
+from cvxpy.tests.test_conic_solvers import is_knitro_available
 
 
 # Always parametrize both solvers, skip at runtime if not available
 NLP_SOLVERS = [
     pytest.param('IPOPT', marks=pytest.mark.skipif(
-        not is_ipopt_available(), reason='IPOPT is not installed.')),
+        'IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')),
     pytest.param('KNITRO', marks=pytest.mark.skipif(
         not is_knitro_available(), reason='KNITRO is not installed or license not available.')),
 ]
@@ -309,7 +291,7 @@ class TestNLPExamples:
         t = cp.Variable(N+1, bounds=[-1, 1])
         x = cp.Variable(N+1, bounds=[-0.05, 0.05])
         u = cp.Variable(N+1)
-
+        u.value = np.zeros(N+1)
         control_terms = cp.multiply(0.5 * h, cp.power(u[1:], 2) + cp.power(u[:-1], 2))
         trigonometric_terms = cp.multiply(0.5 * alpha * h, cp.cos(t[1:]) + cp.cos(t[:-1]))
         objective_terms = cp.sum(control_terms + trigonometric_terms)
