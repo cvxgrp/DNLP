@@ -5,22 +5,29 @@ import pytest
 import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
+
+def is_knitro_available():
+    """Check if KNITRO is installed and a license is available."""
+    if 'KNITRO' not in INSTALLED_SOLVERS:
+        return False
+    try:
+        import knitro
+        # Try to create and delete a Knitro solver instance
+        kc = knitro.KN_new()
+        if kc is None:
+            return False
+        knitro.KN_free(kc)
+        return True
+    except Exception:
+        return False
+
+
 # Define available NLP solvers for parametrization
 NLP_SOLVERS = []
 if 'IPOPT' in INSTALLED_SOLVERS:
     NLP_SOLVERS.append('IPOPT')
-if 'KNITRO' in INSTALLED_SOLVERS:
+if is_knitro_available():
     NLP_SOLVERS.append('KNITRO')
-
-
-def get_solver(solver_name):
-    """Get the solver object from the solver name."""
-    if solver_name == 'IPOPT':
-        return cp.IPOPT
-    elif solver_name == 'KNITRO':
-        return cp.KNITRO
-    else:
-        raise ValueError(f"Unknown solver: {solver_name}")
 
 
 @pytest.mark.skipif(len(NLP_SOLVERS) == 0, reason='No NLP solvers installed.')
@@ -30,9 +37,8 @@ class TestNLPExamples:
     the Julia documentation: https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/simple_examples/.
     """
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_hs071(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_hs071(self, solver):
         x = cp.Variable(4, bounds=[0, 6])
         x.value = np.array([1.0, 5.0, 5.0, 1.0])
         objective = cp.Minimize(x[0]*x[3]*(x[0] + x[1] + x[2]) + x[2])
@@ -46,9 +52,8 @@ class TestNLPExamples:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([0.75450865, 4.63936861, 3.78856881, 1.88513184]))
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_mle(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_mle(self, solver):
         n = 1000
         np.random.seed(1234)
         data = np.random.randn(n)
@@ -71,9 +76,8 @@ class TestNLPExamples:
         assert np.allclose(sigma.value, 0.77079388)
         assert np.allclose(mu.value, 0.59412321)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_portfolio_opt(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_portfolio_opt(self, solver):
         # data taken from https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/portfolio/
         # r and Q are pre-computed from historical data of 3 assets
         r = np.array([0.026002150277777, 0.008101316405671, 0.073715909491990])
@@ -99,9 +103,8 @@ class TestNLPExamples:
         # Second element can be slightly negative due to numerical tolerance
         assert np.allclose(x.value, np.array([4.97045504e+02, 0.0, 5.02954496e+02]), atol=1e-4)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_rosenbrock(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_rosenbrock(self, solver):
         x = cp.Variable(2, name='x')
         objective = cp.Minimize((1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2)
         problem = cp.Problem(objective, [])
@@ -109,9 +112,8 @@ class TestNLPExamples:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([1.0, 1.0]))
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_qcp(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_qcp(self, solver):
         x = cp.Variable(1)
         y = cp.Variable(1, bounds=[0, np.inf])
         z = cp.Variable(1, bounds=[0, np.inf])
@@ -130,9 +132,8 @@ class TestNLPExamples:
         assert np.allclose(y.value, np.array([0.25706586]))
         assert np.allclose(z.value, np.array([0.4159413]))
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_analytic_polytope_center(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_analytic_polytope_center(self, solver):
         # Generate random data
         np.random.seed(0)
         m, n = 50, 4
@@ -149,9 +150,8 @@ class TestNLPExamples:
         problem.solve(solver=solver, nlp=True)
         assert problem.status == cp.OPTIMAL
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_socp(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_socp(self, solver):
         # Define variables
         x = cp.Variable(3)
         y = cp.Variable()
@@ -174,9 +174,8 @@ class TestNLPExamples:
         assert np.allclose(x.value, [-3.87462191, -2.12978826, 2.33480343])
         assert np.allclose(y.value, 5)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_portfolio_socp(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_portfolio_socp(self, solver):
         np.random.seed(858)
         n = 100
         x = cp.Variable(n, name='x')
@@ -196,9 +195,8 @@ class TestNLPExamples:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(problem.value, -1.93414338e+00)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_localization(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_localization(self, solver):
         np.random.seed(42)
         m = 10
         dim = 2
@@ -214,10 +212,9 @@ class TestNLPExamples:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, x_true)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_circle_packing_formulation_one(self, solver_name):
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_circle_packing_formulation_one(self, solver):
         """Epigraph formulation."""
-        solver = get_solver(solver_name)
         rng = np.random.default_rng(5)
         n = 3
         radius = rng.uniform(1.0, 3.0, n)
@@ -240,12 +237,11 @@ class TestNLPExamples:
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_circle_packing_formulation_two(self, solver_name):
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_circle_packing_formulation_two(self, solver):
         """Using norm_inf. This test revealed a very subtle bug in the unpacking of
         the ipopt solution. Some variables were mistakenly reordered. It was fixed
         in https://github.com/cvxgrp/cvxpy-ipopt/pull/82"""
-        solver = get_solver(solver_name)
         rng = np.random.default_rng(5)
         n = 3
         radius = rng.uniform(1.0, 3.0, n)
@@ -266,10 +262,9 @@ class TestNLPExamples:
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_circle_packing_formulation_three(self, solver_name):
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_circle_packing_formulation_three(self, solver):
         """Using max max abs."""
-        solver = get_solver(solver_name)
         rng = np.random.default_rng(5)
         n = 3
         radius = rng.uniform(1.0, 3.0, n)
@@ -290,9 +285,8 @@ class TestNLPExamples:
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_geo_mean(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_geo_mean(self, solver):
         x = cp.Variable(3, pos=True)
         geo_mean = cp.geo_mean(x)
         objective = cp.Maximize(geo_mean)
@@ -302,14 +296,13 @@ class TestNLPExamples:
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([1/3, 1/3, 1/3]))
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_geo_mean2(self, solver_name):
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_geo_mean2(self, solver):
         """
         This test doesn't converge to the global optimal solution
         which is x^* = p/sum(p),
         but at least there are no errors in the derivative computations.
         """
-        solver = get_solver(solver_name)
         p = np.array([.07, .12, .23, .19, .39])
         x = cp.Variable(5, nonneg=True)
         prob = cp.Problem(cp.Maximize(cp.geo_mean(x, p)), [cp.sum(x) <= 1])
@@ -322,9 +315,8 @@ class TestNLPExamples:
 @pytest.mark.skipif(len(NLP_SOLVERS) == 0, reason='No NLP solvers installed.')
 class TestNonlinearControl:
 
-    @pytest.mark.parametrize("solver_name", NLP_SOLVERS)
-    def test_clnlbeam(self, solver_name):
-        solver = get_solver(solver_name)
+    @pytest.mark.parametrize("solver", NLP_SOLVERS)
+    def test_clnlbeam(self, solver):
         N = 1000
         h = 1 / N
         alpha = 350
