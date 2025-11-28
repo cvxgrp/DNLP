@@ -5,7 +5,26 @@ import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
-@pytest.mark.skipif('KNITRO' not in INSTALLED_SOLVERS, reason='KNITRO is not installed.')
+def is_knitro_available():
+    """Check if KNITRO is installed and a license is available."""
+    if 'KNITRO' not in INSTALLED_SOLVERS:
+        return False
+    try:
+        import knitro
+        # Try to create and delete a Knitro solver instance
+        kc = knitro.KN_new()
+        if kc is None:
+            return False
+        knitro.KN_free(kc)
+        return True
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(
+    not is_knitro_available(),
+    reason='KNITRO is not installed or license is not available.'
+)
 class TestKNITROInterface:
     """Tests for KNITRO solver interface options and algorithms."""
 
