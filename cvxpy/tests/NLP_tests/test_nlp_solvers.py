@@ -13,7 +13,12 @@ def is_ipopt_available():
 
 def is_knitro_available():
     """Check if KNITRO is installed and a license is available."""
+    import os
     if 'KNITRO' not in INSTALLED_SOLVERS:
+        return False
+    # Skip license check if no license file/env is configured
+    # This prevents hanging in CI when KNITRO is installed but not licensed
+    if not os.environ.get('ARTELYS_LICENSE') and not os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR'):
         return False
     try:
         import knitro

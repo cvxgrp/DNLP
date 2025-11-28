@@ -7,7 +7,12 @@ from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 def is_knitro_available():
     """Check if KNITRO is installed and a license is available."""
+    import os
     if 'KNITRO' not in INSTALLED_SOLVERS:
+        return False
+    # Skip license check if no license file/env is configured
+    # This prevents hanging in CI when KNITRO is installed but not licensed
+    if not os.environ.get('ARTELYS_LICENSE') and not os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR'):
         return False
     try:
         import knitro
@@ -234,6 +239,19 @@ class TestKNITROInterface:
 
         with pytest.raises(ValueError, match="Unknown KNITRO option"):
             prob.solve(solver=cp.KNITRO, nlp=True, unknown_option=123)
+
+    def test_knitro_solver_stats(self):
+        """Test that solver stats (num_iters, solve_time) are available."""
+        x = cp.Variable(2)
+        x.value = np.array([1.0, 1.0])
+        prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
+
+        prob.solve(solver=cp.KNITRO, nlp=True)
+
+        assert prob.status == cp.OPTIMAL
+        assert prob.solver_stats is not None
+        assert prob.solver_stats.num_iters == 3
+        assert prob.solver_stats.solve_time < 0.005  # 5ms solve time
 
 
 @pytest.mark.skipif('COPT' not in INSTALLED_SOLVERS, reason='COPT is not installed.')

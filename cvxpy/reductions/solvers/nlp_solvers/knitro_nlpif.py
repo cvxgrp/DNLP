@@ -118,8 +118,10 @@ class KNITRO(NLPsolver):
         """
         Returns the solution to the original problem given the inverse_data.
         """
-        attr = {}
-        # TODO update invert for knitro specific attributes
+        attr = {
+            s.NUM_ITERS: solution.get('num_iters'),
+            s.SOLVE_TIME: solution.get('solve_time_real'),
+        }
         status = self.STATUS_MAP[solution['status']]
         if status in s.SOLUTION_PRESENT:
             primal_val = solution['obj_val']
@@ -347,11 +349,20 @@ class KNITRO(NLPsolver):
             # Retrieve the solution
             nStatus, objSol, x_sol, lambda_sol = knitro.KN_get_solution(kc)
 
+            # Retrieve solve statistics
+            num_iters = knitro.KN_get_number_iters(kc)
+            solve_time_cpu = knitro.KN_get_solve_time_cpu(kc)
+            solve_time_real = knitro.KN_get_solve_time_real(kc)
+
             # Return results in dictionary format expected by invert()
             solution = {
                 'status': nStatus,
                 'obj_val': objSol,
                 'x': np.array(x_sol),
+                'lambda': np.array(lambda_sol),
+                'num_iters': num_iters,
+                'solve_time_cpu': solve_time_cpu,
+                'solve_time_real': solve_time_real,
             }
             return solution
 
