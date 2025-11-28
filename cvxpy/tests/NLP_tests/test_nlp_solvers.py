@@ -6,6 +6,11 @@ import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
+def is_ipopt_available():
+    """Check if IPOPT is installed."""
+    return 'IPOPT' in INSTALLED_SOLVERS
+
+
 def is_knitro_available():
     """Check if KNITRO is installed and a license is available."""
     if 'KNITRO' not in INSTALLED_SOLVERS:
@@ -22,15 +27,15 @@ def is_knitro_available():
         return False
 
 
-# Define available NLP solvers for parametrization
-NLP_SOLVERS = []
-if 'IPOPT' in INSTALLED_SOLVERS:
-    NLP_SOLVERS.append('IPOPT')
-if is_knitro_available():
-    NLP_SOLVERS.append('KNITRO')
+# Always parametrize both solvers, skip at runtime if not available
+NLP_SOLVERS = [
+    pytest.param('IPOPT', marks=pytest.mark.skipif(
+        not is_ipopt_available(), reason='IPOPT is not installed.')),
+    pytest.param('KNITRO', marks=pytest.mark.skipif(
+        not is_knitro_available(), reason='KNITRO is not installed or license not available.')),
+]
 
 
-@pytest.mark.skipif(len(NLP_SOLVERS) == 0, reason='No NLP solvers installed.')
 class TestNLPExamples:
     """
     Nonlinear test problems taken from the IPOPT documentation and
@@ -312,7 +317,6 @@ class TestNLPExamples:
         assert np.allclose(x.value, x_true)
 
 
-@pytest.mark.skipif(len(NLP_SOLVERS) == 0, reason='No NLP solvers installed.')
 class TestNonlinearControl:
 
     @pytest.mark.parametrize("solver", NLP_SOLVERS)
