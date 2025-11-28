@@ -29,5 +29,5 @@ class TestAbs():
 
         assert len(all_objs) == n_runs
         manual_obj = np.max(np.linalg.norm(best_centers, ord=np.inf, axis=1) + radius)
-        assert np.isclose(manual_obj, obj_best_of)
-        assert(np.isclose(manual_obj, np.min(all_objs)))
+        assert manual_obj == obj_best_of
+        assert manual_obj == np.min(all_objs)
