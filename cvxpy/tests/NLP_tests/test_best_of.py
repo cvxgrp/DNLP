@@ -6,8 +6,7 @@ from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
 @pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
-class TestAbs():
-
+class TestBestOf():
 
     def test_circle_packing_best_of(self):
         rng = np.random.default_rng(5)
