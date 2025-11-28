@@ -45,7 +45,7 @@ class TestIPOPT:
 
         objective = cp.Maximize(log_likelihood)
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=cp.IPOPT, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True, derivative_check=None)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(sigma.value, 0.77079388)
         assert np.allclose(mu.value, 0.59412321)
@@ -282,11 +282,6 @@ class TestIPOPT:
         x = cp.Variable(N+1, bounds=[-0.05, 0.05])
         u = cp.Variable(N+1)
 
-        # Set initial values within bounds
-        t.value = np.zeros(N+1)
-        x.value = np.zeros(N+1)
-        u.value = np.zeros(N+1)
-
         control_terms = cp.multiply(0.5 * h, cp.power(u[1:], 2) + cp.power(u[:-1], 2))
         trigonometric_terms = cp.multiply(0.5 * alpha * h, cp.cos(t[1:]) + cp.cos(t[:-1]))
         objective_terms = cp.sum(control_terms + trigonometric_terms)
@@ -300,6 +295,6 @@ class TestIPOPT:
         constraints.append(angle_constraint)
 
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=cp.IPOPT, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True, derivative_check=None)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(problem.value, 3.500e+02)
