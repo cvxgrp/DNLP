@@ -17,51 +17,67 @@ class TestKNITROInterface:
         assert prob.status == cp.OPTIMAL
         assert np.isclose(x.value, 2.0, atol=1e-5)
 
-    def test_knitro_algorithm_bar_direct(self):
+    def test_knitro_algorithm_bar_direct(self, capfd):
         """Test Interior-Point/Barrier Direct algorithm (algorithm=1)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, algorithm=1)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, algorithm=1)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "Interior-Point/Barrier Direct" in output
 
-    def test_knitro_algorithm_bar_cg(self):
+    def test_knitro_algorithm_bar_cg(self, capfd):
         """Test Interior-Point/Barrier CG algorithm (algorithm=2)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, algorithm=2)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, algorithm=2)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "Interior-Point/Barrier Conjugate Gradient" in output
 
-    def test_knitro_algorithm_act_cg(self):
+    def test_knitro_algorithm_act_cg(self, capfd):
         """Test Active-Set CG algorithm (algorithm=3)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, algorithm=3)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, algorithm=3)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "Active-Set" in output
 
-    def test_knitro_algorithm_sqp(self):
+    def test_knitro_algorithm_sqp(self, capfd):
         """Test Active-Set SQP algorithm (algorithm=4)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, algorithm=4)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, algorithm=4)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "SQP" in output
 
-    def test_knitro_algorithm_alm(self):
+    def test_knitro_algorithm_alm(self, capfd):
         """Test Augmented Lagrangian Method algorithm (algorithm=6)."""
         # ALM works best on unconstrained or simple problems
         x = cp.Variable(2, name='x')
@@ -70,54 +86,76 @@ class TestKNITROInterface:
             []
         )
 
-        prob.solve(solver=cp.KNITRO, nlp=True, algorithm=6)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, algorithm=6)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [1.0, 1.0], atol=1e-3)
+        # ALM output shows "Sequential Quadratic Programming" as the subproblem solver
+        # but we can verify the algorithm parameter was set
+        assert "nlp_algorithm            6" in output
 
-    def test_knitro_hessopt_exact(self):
+    def test_knitro_hessopt_exact(self, capfd):
         """Test exact Hessian option (hessopt=1, default)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, hessopt=1)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, hessopt=1)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "hessopt                  1" in output
 
-    def test_knitro_hessopt_bfgs(self):
+    def test_knitro_hessopt_bfgs(self, capfd):
         """Test BFGS Hessian approximation (hessopt=2)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, hessopt=2)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, hessopt=2)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "hessopt                  2" in output
 
-    def test_knitro_hessopt_lbfgs(self):
+    def test_knitro_hessopt_lbfgs(self, capfd):
         """Test L-BFGS Hessian approximation (hessopt=6)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, hessopt=6)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, hessopt=6)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "hessopt                  6" in output
 
-    def test_knitro_hessopt_sr1(self):
+    def test_knitro_hessopt_sr1(self, capfd):
         """Test SR1 Hessian approximation (hessopt=3)."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
         prob = cp.Problem(cp.Minimize(x[0]**2 + x[1]**2), [x[0] + x[1] >= 1])
 
-        prob.solve(solver=cp.KNITRO, nlp=True, hessopt=3)
+        prob.solve(solver=cp.KNITRO, nlp=True, verbose=True, hessopt=3)
+
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
 
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "hessopt                  3" in output
 
     def test_knitro_maxit(self):
         """Test maximum iterations option."""
@@ -144,7 +182,7 @@ class TestKNITROInterface:
         # Status should be USER_LIMIT (iteration limit reached)
         assert prob.status in [cp.USER_LIMIT, cp.OPTIMAL_INACCURATE, cp.OPTIMAL]
 
-    def test_knitro_combined_options(self):
+    def test_knitro_combined_options(self, capfd):
         """Test combining multiple KNITRO options."""
         x = cp.Variable(2)
         x.value = np.array([1.0, 1.0])
@@ -153,14 +191,22 @@ class TestKNITROInterface:
         prob.solve(
             solver=cp.KNITRO,
             nlp=True,
+            verbose=True,
             algorithm=1,     # BAR_DIRECT
             hessopt=2,       # BFGS
             feastol=1e-8,
             opttol=1e-8,
         )
 
+        captured = capfd.readouterr()
+        output = captured.out + captured.err
+
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, [0.5, 0.5], atol=1e-4)
+        assert "Interior-Point/Barrier Direct" in output
+        assert "hessopt                  2" in output
+        assert "feastol                  1e-08" in output
+        assert "opttol                   1e-08" in output
 
     def test_knitro_unknown_option_raises(self):
         """Test that unknown options raise ValueError."""
