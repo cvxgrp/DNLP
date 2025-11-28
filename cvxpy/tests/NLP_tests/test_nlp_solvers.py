@@ -5,7 +5,6 @@ import pytest
 import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
-
 # Define available NLP solvers for parametrization
 NLP_SOLVERS = []
 if 'IPOPT' in INSTALLED_SOLVERS:
