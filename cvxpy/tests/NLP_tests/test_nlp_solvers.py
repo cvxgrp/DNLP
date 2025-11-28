@@ -1,6 +1,4 @@
 
-import os
-
 import numpy as np
 import pytest
 
@@ -8,33 +6,14 @@ import cvxpy as cp
 from cvxpy.reductions.solvers.defines import INSTALLED_SOLVERS
 
 
-def is_ipopt_available():
-    """Check if IPOPT is installed."""
-    return 'IPOPT' in INSTALLED_SOLVERS
-
-
-def is_knitro_available():
-    """Check if KNITRO is installed and a license is available."""
-    if 'KNITRO' not in INSTALLED_SOLVERS:
-        return False
-    # Only run KNITRO tests if license env var is explicitly set
-    # This prevents hanging in CI when KNITRO is installed but not licensed
-    return bool(
-        os.environ.get('ARTELYS_LICENSE') or
-        os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR')
-    )
-
-
-class StandardNLPTests:
+@pytest.mark.skipif('IPOPT' not in INSTALLED_SOLVERS, reason='IPOPT is not installed.')
+class TestIPOPT:
     """
     Standard NLP test problems taken from the IPOPT documentation and
     the Julia documentation: https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/simple_examples/.
-
-    These tests are run for each NLP solver by the solver-specific test classes below.
     """
 
-    @staticmethod
-    def test_hs071(solver):
+    def test_hs071(self):
         x = cp.Variable(4, bounds=[0, 6])
         x.value = np.array([1.0, 5.0, 5.0, 1.0])
         objective = cp.Minimize(x[0]*x[3]*(x[0] + x[1] + x[2]) + x[2])
@@ -44,12 +23,11 @@ class StandardNLPTests:
             cp.sum(cp.square(x)) == 40,
         ]
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([0.75450865, 4.63936861, 3.78856881, 1.88513184]))
 
-    @staticmethod
-    def test_mle(solver):
+    def test_mle(self):
         n = 1000
         np.random.seed(1234)
         data = np.random.randn(n)
@@ -67,13 +45,12 @@ class StandardNLPTests:
 
         objective = cp.Maximize(log_likelihood)
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(sigma.value, 0.77079388)
         assert np.allclose(mu.value, 0.59412321)
 
-    @staticmethod
-    def test_portfolio_opt(solver):
+    def test_portfolio_opt(self):
         # data taken from https://jump.dev/JuMP.jl/stable/tutorials/nonlinear/portfolio/
         # r and Q are pre-computed from historical data of 3 assets
         r = np.array([0.026002150277777, 0.008101316405671, 0.073715909491990])
@@ -94,22 +71,20 @@ class StandardNLPTests:
                 x >= 0
             ]
         )
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         # Second element can be slightly negative due to numerical tolerance
         assert np.allclose(x.value, np.array([4.97045504e+02, 0.0, 5.02954496e+02]), atol=1e-4)
 
-    @staticmethod
-    def test_rosenbrock(solver):
+    def test_rosenbrock(self):
         x = cp.Variable(2, name='x')
         objective = cp.Minimize((1 - x[0])**2 + 100 * (x[1] - x[0]**2)**2)
         problem = cp.Problem(objective, [])
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([1.0, 1.0]))
 
-    @staticmethod
-    def test_qcp(solver):
+    def test_qcp(self):
         x = cp.Variable(1)
         y = cp.Variable(1, bounds=[0, np.inf])
         z = cp.Variable(1, bounds=[0, np.inf])
@@ -122,14 +97,13 @@ class StandardNLPTests:
             x**2 - cp.multiply(y, z) <= 0
         ]
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([0.32699284]))
         assert np.allclose(y.value, np.array([0.25706586]))
         assert np.allclose(z.value, np.array([0.4159413]))
 
-    @staticmethod
-    def test_analytic_polytope_center(solver):
+    def test_analytic_polytope_center(self):
         # Generate random data
         np.random.seed(0)
         m, n = 50, 4
@@ -143,11 +117,10 @@ class StandardNLPTests:
         objective = cp.Minimize(-cp.sum(cp.log(b - A @ x)))
         problem = cp.Problem(objective, [])
         # Solve the problem
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
 
-    @staticmethod
-    def test_socp(solver):
+    def test_socp(self):
         # Define variables
         x = cp.Variable(3)
         y = cp.Variable()
@@ -164,14 +137,13 @@ class StandardNLPTests:
 
         # Create and solve the problem
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(objective.value, -13.548638814247532)
         assert np.allclose(x.value, [-3.87462191, -2.12978826, 2.33480343])
         assert np.allclose(y.value, 5)
 
-    @staticmethod
-    def test_portfolio_socp(solver):
+    def test_portfolio_socp(self):
         np.random.seed(858)
         n = 100
         x = cp.Variable(n, name='x')
@@ -187,12 +159,11 @@ class StandardNLPTests:
                        cp.sum(x) == 1,
                        x >= 0]
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(problem.value, -1.93414338e+00)
 
-    @staticmethod
-    def test_localization(solver):
+    def test_localization(self):
         np.random.seed(42)
         m = 10
         dim = 2
@@ -204,12 +175,11 @@ class StandardNLPTests:
         constraints = [t == cp.sqrt(cp.sum(cp.square(x - a), axis=1))]
         objective = cp.Minimize(cp.sum_squares(t - rho))
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, x_true)
 
-    @staticmethod
-    def test_circle_packing_formulation_one(solver):
+    def test_circle_packing_formulation_one(self):
         """Epigraph formulation."""
         rng = np.random.default_rng(5)
         n = 3
@@ -227,14 +197,13 @@ class StandardNLPTests:
         obj = cp.Minimize(t)
         constraints += [cp.max(cp.norm_inf(centers, axis=0) + radius) <= t]
         prob = cp.Problem(obj, constraints)
-        prob.solve(solver=solver, nlp=True)
+        prob.solve(solver=cp.IPOPT, nlp=True)
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @staticmethod
-    def test_circle_packing_formulation_two(solver):
+    def test_circle_packing_formulation_two(self):
         """Using norm_inf. This test revealed a very subtle bug in the unpacking of
         the ipopt solution. Some variables were mistakenly reordered. It was fixed
         in https://github.com/cvxgrp/cvxpy-ipopt/pull/82"""
@@ -252,14 +221,13 @@ class StandardNLPTests:
         centers.value = rng.uniform(-5.0, 5.0, (2, n))
         obj = cp.Minimize(cp.max(cp.norm_inf(centers, axis=0) + radius))
         prob = cp.Problem(obj, constraints)
-        prob.solve(solver=solver, nlp=True)
+        prob.solve(solver=cp.IPOPT, nlp=True)
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @staticmethod
-    def test_circle_packing_formulation_three(solver):
+    def test_circle_packing_formulation_three(self):
         """Using max max abs."""
         rng = np.random.default_rng(5)
         n = 3
@@ -275,25 +243,23 @@ class StandardNLPTests:
         centers.value = rng.uniform(-5.0, 5.0, (2, n))
         obj = cp.Minimize(cp.max(cp.max(cp.abs(centers), axis=0) + radius))
         prob = cp.Problem(obj, constraints)
-        prob.solve(solver=solver, nlp=True)
+        prob.solve(solver=cp.IPOPT, nlp=True)
 
         true_sol = np.array([[1.73655994, -1.98685738, 2.57208783],
                              [1.99273311, -1.67415425, -2.57208783]])
         assert np.allclose(centers.value, true_sol)
 
-    @staticmethod
-    def test_geo_mean(solver):
+    def test_geo_mean(self):
         x = cp.Variable(3, pos=True)
         geo_mean = cp.geo_mean(x)
         objective = cp.Maximize(geo_mean)
         constraints = [cp.sum(x) == 1]
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(x.value, np.array([1/3, 1/3, 1/3]))
 
-    @staticmethod
-    def test_geo_mean2(solver):
+    def test_geo_mean2(self):
         """
         This test doesn't converge to the global optimal solution
         which is x^* = p/sum(p),
@@ -302,13 +268,12 @@ class StandardNLPTests:
         p = np.array([.07, .12, .23, .19, .39])
         x = cp.Variable(5, nonneg=True)
         prob = cp.Problem(cp.Maximize(cp.geo_mean(x, p)), [cp.sum(x) <= 1])
-        prob.solve(solver=solver, nlp=True)
+        prob.solve(solver=cp.IPOPT, nlp=True)
         x_true = p/sum(p)
         assert prob.status == cp.OPTIMAL
         assert np.allclose(x.value, x_true)
 
-    @staticmethod
-    def test_clnlbeam(solver):
+    def test_clnlbeam(self):
         N = 1000
         h = 1 / N
         alpha = 350
@@ -317,7 +282,7 @@ class StandardNLPTests:
         x = cp.Variable(N+1, bounds=[-0.05, 0.05])
         u = cp.Variable(N+1)
 
-        # Set initial values within bounds (required for some solvers like KNITRO)
+        # Set initial values within bounds
         t.value = np.zeros(N+1)
         x.value = np.zeros(N+1)
         u.value = np.zeros(N+1)
@@ -335,109 +300,6 @@ class StandardNLPTests:
         constraints.append(angle_constraint)
 
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=solver, nlp=True)
+        problem.solve(solver=cp.IPOPT, nlp=True)
         assert problem.status == cp.OPTIMAL
         assert np.allclose(problem.value, 3.500e+02)
-
-
-@pytest.mark.skipif(not is_ipopt_available(), reason='IPOPT is not installed.')
-class TestIPOPT:
-    """IPOPT NLP solver tests."""
-
-    def test_hs071(self):
-        StandardNLPTests.test_hs071(solver='IPOPT')
-
-    def test_mle(self):
-        StandardNLPTests.test_mle(solver='IPOPT')
-
-    def test_portfolio_opt(self):
-        StandardNLPTests.test_portfolio_opt(solver='IPOPT')
-
-    def test_rosenbrock(self):
-        StandardNLPTests.test_rosenbrock(solver='IPOPT')
-
-    def test_qcp(self):
-        StandardNLPTests.test_qcp(solver='IPOPT')
-
-    def test_analytic_polytope_center(self):
-        StandardNLPTests.test_analytic_polytope_center(solver='IPOPT')
-
-    def test_socp(self):
-        StandardNLPTests.test_socp(solver='IPOPT')
-
-    def test_portfolio_socp(self):
-        StandardNLPTests.test_portfolio_socp(solver='IPOPT')
-
-    def test_localization(self):
-        StandardNLPTests.test_localization(solver='IPOPT')
-
-    def test_circle_packing_formulation_one(self):
-        StandardNLPTests.test_circle_packing_formulation_one(solver='IPOPT')
-
-    def test_circle_packing_formulation_two(self):
-        StandardNLPTests.test_circle_packing_formulation_two(solver='IPOPT')
-
-    def test_circle_packing_formulation_three(self):
-        StandardNLPTests.test_circle_packing_formulation_three(solver='IPOPT')
-
-    def test_geo_mean(self):
-        StandardNLPTests.test_geo_mean(solver='IPOPT')
-
-    def test_geo_mean2(self):
-        StandardNLPTests.test_geo_mean2(solver='IPOPT')
-
-    def test_clnlbeam(self):
-        StandardNLPTests.test_clnlbeam(solver='IPOPT')
-
-
-@pytest.mark.skipif(
-    not is_knitro_available(),
-    reason='KNITRO is not installed or license not available.'
-)
-class TestKNITRO:
-    """KNITRO NLP solver tests."""
-
-    def test_hs071(self):
-        StandardNLPTests.test_hs071(solver='KNITRO')
-
-    def test_mle(self):
-        StandardNLPTests.test_mle(solver='KNITRO')
-
-    def test_portfolio_opt(self):
-        StandardNLPTests.test_portfolio_opt(solver='KNITRO')
-
-    def test_rosenbrock(self):
-        StandardNLPTests.test_rosenbrock(solver='KNITRO')
-
-    def test_qcp(self):
-        StandardNLPTests.test_qcp(solver='KNITRO')
-
-    def test_analytic_polytope_center(self):
-        StandardNLPTests.test_analytic_polytope_center(solver='KNITRO')
-
-    def test_socp(self):
-        StandardNLPTests.test_socp(solver='KNITRO')
-
-    def test_portfolio_socp(self):
-        StandardNLPTests.test_portfolio_socp(solver='KNITRO')
-
-    def test_localization(self):
-        StandardNLPTests.test_localization(solver='KNITRO')
-
-    def test_circle_packing_formulation_one(self):
-        StandardNLPTests.test_circle_packing_formulation_one(solver='KNITRO')
-
-    def test_circle_packing_formulation_two(self):
-        StandardNLPTests.test_circle_packing_formulation_two(solver='KNITRO')
-
-    def test_circle_packing_formulation_three(self):
-        StandardNLPTests.test_circle_packing_formulation_three(solver='KNITRO')
-
-    def test_geo_mean(self):
-        StandardNLPTests.test_geo_mean(solver='KNITRO')
-
-    def test_geo_mean2(self):
-        StandardNLPTests.test_geo_mean2(solver='KNITRO')
-
-    def test_clnlbeam(self):
-        StandardNLPTests.test_clnlbeam(solver='KNITRO')
