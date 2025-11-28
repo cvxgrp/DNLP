@@ -16,20 +16,12 @@ def is_knitro_available():
     import os
     if 'KNITRO' not in INSTALLED_SOLVERS:
         return False
-    # Skip license check if no license file/env is configured
+    # Only run KNITRO tests if license env var is explicitly set
     # This prevents hanging in CI when KNITRO is installed but not licensed
-    if not os.environ.get('ARTELYS_LICENSE') and not os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR'):
-        return False
-    try:
-        import knitro
-        # Try to create and delete a Knitro solver instance
-        kc = knitro.KN_new()
-        if kc is None:
-            return False
-        knitro.KN_free(kc)
-        return True
-    except Exception:
-        return False
+    return bool(
+        os.environ.get('ARTELYS_LICENSE') or
+        os.environ.get('ARTELYS_LICENSE_NETWORK_ADDR')
+    )
 
 
 # Always parametrize both solvers, skip at runtime if not available
