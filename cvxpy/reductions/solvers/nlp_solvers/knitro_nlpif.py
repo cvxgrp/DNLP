@@ -169,7 +169,271 @@ class KNITRO(NLPsolver):
         tuple
             (status, optimal value, primal, equality dual, inequality dual)
         """
-        raise NotImplementedError("KNITRO NLP interface is not yet implemented.")
+        from knitro import (
+            KN_INFINITY,
+            KN_OBJGOAL_MINIMIZE,
+            KN_PARAM_OUTLEV,
+            KN_RC_EVALFC,
+            KN_add_cons,
+            KN_add_eval_callback,
+            KN_add_vars,
+            KN_free,
+            KN_get_solution,
+            KN_new,
+            KN_set_con_lobnds,
+            KN_set_con_upbnds,
+            KN_set_int_param,
+            KN_set_obj_goal,
+            KN_set_var_lobnds,
+            KN_set_var_primal_init_values,
+            KN_set_var_upbnds,
+            KN_solve,
+        )
+
+        # Extract data from the data dictionary
+        x0 = data["x0"]
+        lb = data["lb"].copy()
+        ub = data["ub"].copy()
+        cl = data["cl"].copy()
+        cu = data["cu"].copy()
+
+        # Convert numpy inf to KNITRO infinity
+        lb[lb == -np.inf] = -KN_INFINITY
+        ub[ub == np.inf] = KN_INFINITY
+        cl[cl == -np.inf] = -KN_INFINITY
+        cu[cu == np.inf] = KN_INFINITY
+
+        n = len(x0)  # number of variables
+        m = len(cl)  # number of constraints
+
+        # Create a new Knitro solver instance
+        kc = KN_new()
+
+        try:
+            # Add variables
+            KN_add_vars(kc, n)
+
+            # Set variable bounds
+            KN_set_var_lobnds(kc, xLoBnds=lb)
+            KN_set_var_upbnds(kc, xUpBnds=ub)
+
+            # Set initial values for variables
+            KN_set_var_primal_init_values(kc, xInitVals=x0)
+
+            # Add constraints (if any)
+            if m > 0:
+                KN_add_cons(kc, m)
+                KN_set_con_lobnds(kc, cLoBnds=cl)
+                KN_set_con_upbnds(kc, cUpBnds=cu)
+
+            # Set objective goal to minimize
+            KN_set_obj_goal(kc, KN_OBJGOAL_MINIMIZE)
+
+            # Set verbosity
+            if not verbose:
+                KN_set_int_param(kc, KN_PARAM_OUTLEV, 0)
+
+            # Get oracles for function evaluations
+            oracles = data["oracles"]
+
+            # Define the callback for evaluating objective and constraints (EVALFC)
+            def callbackEvalFC(kc, cb, evalRequest, evalResult, userParams):
+                if evalRequest.type != KN_RC_EVALFC:
+                    return -1  # Error: wrong evaluation type
+
+                # Convert x from list to numpy array
+                x = np.array(evalRequest.x)
+
+                # Evaluate objective
+                evalResult.obj = oracles.objective(x)
+
+                # Evaluate constraints (if any)
+                if m > 0:
+                    c_vals = oracles.constraints(x)
+                    for i in range(m):
+                        evalResult.c[i] = c_vals[i]
+
+                return 0  # Success
+
+            # Register the evaluation callback
+            # evalObj=True means we evaluate the objective in this callback
+            # indexCons=list(range(m)) means we evaluate all constraints
+            cb = KN_add_eval_callback(
+                kc,
+                evalObj=True,
+                indexCons=(list(range(m)) if m > 0 else None),
+                funcCallback=callbackEvalFC,
+            )
+
+            # Set up gradient callback (EVALGA)
+            from knitro import (
+                KN_HESSOPT_EXACT,
+                KN_PARAM_HESSOPT,
+                KN_RC_EVALGA,
+                KN_RC_EVALH,
+                KN_RC_EVALH_NO_F,
+                KN_set_cb_grad,
+                KN_set_cb_hess,
+            )
+
+            # Get the Jacobian sparsity structure
+            if m > 0:
+                jac_rows, jac_cols = oracles.jacobianstructure()
+                # Convert to lists of Python ints for KNITRO
+                jac_rows = [int(r) for r in jac_rows]
+                jac_cols = [int(c) for c in jac_cols]
+                nnzJ = len(jac_rows)
+            else:
+                jac_rows = None
+                jac_cols = None
+                nnzJ = 0
+
+            # Define the callback for evaluating gradients (EVALGA)
+            def callbackEvalGA(kc, cb, evalRequest, evalResult, userParams):
+                if evalRequest.type != KN_RC_EVALGA:
+                    return -1  # Error: wrong evaluation type
+
+                try:
+                    # Convert x from list to numpy array
+                    x = np.array(evalRequest.x)
+
+                    # Evaluate objective gradient
+                    grad = oracles.gradient(x)
+                    # Convert to numpy array and flatten if needed
+                    grad = np.asarray(grad).flatten()
+                    for i in range(n):
+                        evalResult.objGrad[i] = grad[i]
+
+                    # Evaluate constraint Jacobian (if any)
+                    if m > 0:
+                        jac_vals = oracles.jacobian(x)
+                        # Convert to numpy array if needed (may be memoryview)
+                        jac_vals = np.asarray(jac_vals).flatten()
+                        for i in range(nnzJ):
+                            evalResult.jac[i] = jac_vals[i]
+
+                    return 0  # Success
+                except Exception as e:
+                    print(f"Error in callbackEvalGA: {e}")
+                    return -1
+
+            # Register the gradient callback with sparsity structure
+            KN_set_cb_grad(
+                kc,
+                cb,
+                objGradIndexVars=list(range(n)),  # Dense objective gradient
+                jacIndexCons=jac_rows,
+                jacIndexVars=jac_cols,
+                gradCallback=callbackEvalGA,
+            )
+
+            # Get the Hessian sparsity structure
+            # oracles.hessianstructure() returns lower triangular (rows >= cols)
+            # KNITRO expects upper triangular, so we swap rows and cols
+            hess_rows_lower, hess_cols_lower = oracles.hessianstructure()
+            # Convert to upper triangular by swapping: (row, col) -> (col, row)
+            hess_rows = [int(c) for c in hess_cols_lower]  # cols become rows
+            hess_cols = [int(r) for r in hess_rows_lower]  # rows become cols
+            nnzH = len(hess_rows)
+
+            # Define the callback for evaluating Hessian (EVALH)
+            def callbackEvalH(kc, cb, evalRequest, evalResult, userParams):
+                if evalRequest.type not in (KN_RC_EVALH, KN_RC_EVALH_NO_F):
+                    return -1  # Error: wrong evaluation type
+
+                try:
+                    # Convert x from list to numpy array
+                    x = np.array(evalRequest.x)
+
+                    # Get sigma (objective factor) and lambda (constraint multipliers)
+                    sigma = evalRequest.sigma
+                    lambda_ = np.array(evalRequest.lambda_)
+
+                    # For KN_RC_EVALH_NO_F, the objective component should not be included
+                    if evalRequest.type == KN_RC_EVALH_NO_F:
+                        sigma = 0.0
+
+                    # Evaluate Hessian of the Lagrangian
+                    # oracles.hessian returns values in lower triangular order
+                    hess_vals = oracles.hessian(x, lambda_, sigma)
+                    hess_vals = np.asarray(hess_vals).flatten()
+
+                    # Fill in the Hessian values
+                    for i in range(nnzH):
+                        evalResult.hess[i] = hess_vals[i]
+
+                    return 0  # Success
+                except Exception as e:
+                    print(f"Error in callbackEvalH: {e}")
+                    return -1
+
+            # Register the Hessian callback with sparsity structure
+            KN_set_cb_hess(
+                kc,
+                cb,
+                hessIndexVars1=hess_rows,
+                hessIndexVars2=hess_cols,
+                hessCallback=callbackEvalH,
+            )
+
+            # Use exact Hessian by default (can be overridden by solver_opts)
+            KN_set_int_param(kc, KN_PARAM_HESSOPT, KN_HESSOPT_EXACT)
+
+            # Apply solver options from solver_opts
+            # Options can be passed as string names (e.g., 'algorithm', 'feastol')
+            # or as KNITRO integer parameter IDs
+            import knitro
+            from knitro import KN_set_double_param
+
+            # Map common string option names to KNITRO parameter constants
+            OPTION_MAP = {
+                'algorithm': knitro.KN_PARAM_ALGORITHM,
+                'feastol': knitro.KN_PARAM_FEASTOL,
+                'opttol': knitro.KN_PARAM_OPTTOL,
+                'maxit': knitro.KN_PARAM_MAXIT,
+                'outlev': knitro.KN_PARAM_OUTLEV,
+                'hessopt': knitro.KN_PARAM_HESSOPT,
+                'gradopt': knitro.KN_PARAM_GRADOPT,
+                'feastolabs': knitro.KN_PARAM_FEASTOLABS,
+                'opttolabs': knitro.KN_PARAM_OPTTOLABS,
+            }
+
+            if solver_opts:
+                for option_name, option_value in solver_opts.items():
+                    # Map string names to KNITRO param IDs
+                    if isinstance(option_name, str):
+                        option_name_lower = option_name.lower()
+                        if option_name_lower in OPTION_MAP:
+                            param_id = OPTION_MAP[option_name_lower]
+                        else:
+                            raise ValueError(f"Unknown KNITRO option: {option_name}")
+                    else:
+                        # Assume it's already a KNITRO param ID
+                        param_id = option_name
+
+                    # Set the parameter based on value type
+                    if isinstance(option_value, int):
+                        KN_set_int_param(kc, param_id, option_value)
+                    elif isinstance(option_value, float):
+                        KN_set_double_param(kc, param_id, option_value)
+
+            # Solve the problem
+            nStatus = KN_solve(kc)
+
+            # Retrieve the solution
+            nStatus, objSol, x_sol, lambda_sol = KN_get_solution(kc)
+
+            # Return results in dictionary format expected by invert()
+            solution = {
+                'status': nStatus,
+                'obj_val': objSol,
+                'x': np.array(x_sol),
+            }
+            return solution
+
+        finally:
+            # Always free the Knitro context
+            KN_free(kc)
 
     def cite(self, data):
         """Returns bibtex citation for the solver.
