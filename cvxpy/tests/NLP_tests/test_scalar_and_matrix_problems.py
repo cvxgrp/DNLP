@@ -155,3 +155,49 @@ class TestScalarProblems():
         prob.solve(nlp=True, solver=cp.IPOPT)
         assert prob.status == cp.OPTIMAL
         
+    def test_rel_entr_both_scalar_variables(self):
+        x = cp.Variable()
+        y = cp.Variable()
+        prob = cp.Problem(cp.Minimize(cp.rel_entr(x, y)),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
+
+        x = cp.Variable((1, ))
+        y = cp.Variable((1, ))
+        prob = cp.Problem(cp.Minimize(cp.rel_entr(x, y)),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
+    
+    def test_rel_entr_matrix_variable_and_scalar_variable(self):
+        x = cp.Variable((3, 2))
+        y = cp.Variable()
+        prob = cp.Problem(cp.Minimize(cp.sum(cp.rel_entr(x, y))),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
+
+    def test_rel_entr_scalar_variable_and_matrix_variable(self):
+        x = cp.Variable()
+        y = cp.Variable((3, 2))
+        prob = cp.Problem(cp.Minimize(cp.sum(cp.rel_entr(x, y))),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
+
+    def test_rel_entr_both_matrix_variables(self):
+        x = cp.Variable((3, 2))
+        y = cp.Variable((3, 2))
+        prob = cp.Problem(cp.Minimize(cp.sum(cp.rel_entr(x, y))),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
+
+    def test_rel_entr_both_vector_variables(self):
+        x = cp.Variable((3, ))
+        y = cp.Variable((3, ))
+        prob = cp.Problem(cp.Minimize(cp.sum(cp.rel_entr(x, y))),
+                          [x >= 0.1, y >= 0.1, x <= 2, y <= 2])
+        prob.solve(nlp=True, solver=cp.IPOPT)
+        assert prob.status == cp.OPTIMAL
