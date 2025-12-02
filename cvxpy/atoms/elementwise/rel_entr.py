@@ -139,14 +139,14 @@ class rel_entr(Elementwise):
                     (x, y): (zeros_y, idxs, dxdy_vals),
                     (y, x): (idxs, zeros_y, dxdy_vals)}
         elif y.size == 1:
-            idxs = np.arange(x.size)
+            idxs = np.arange(x.size, dtype=int)
             zeros_x = np.zeros(x.size, dtype=int)
             return {(x, x): (idxs, idxs, dx2_vals), 
                     (y, y): (0, 0, np.sum(dy2_vals)),
                     (x, y): (idxs, zeros_x, dxdy_vals),
                     (y, x): (zeros_x, idxs, dxdy_vals)}
         else:
-            idxs = np.arange(x.size)
+            idxs = np.arange(x.size, dtype=int)
             return {(x, x): (idxs, idxs, dx2_vals), 
                     (y, y): (idxs, idxs, dy2_vals),
                     (x, y): (idxs, idxs, dxdy_vals),

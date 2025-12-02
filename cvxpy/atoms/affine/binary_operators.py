@@ -580,12 +580,12 @@ class multiply(MulExpression):
         if not isinstance(y, Variable) and y.is_affine():
             assert(type(y) == Promote)
             y_var = y.args[0] # here y is a Promote because of how we canonicalize
-            idxs = np.arange(x.size)
+            idxs = np.arange(x.size, dtype=int)
             return {(x): (idxs, idxs, y.value),
                     (y_var): (idxs, np.zeros(x.size, dtype=int), x.value)}
         
         # here both are variables
-        idxs = np.arange(x.size)
+        idxs = np.arange(x.size, dtype=int)
         jacobian_dict = {x: (idxs, idxs, y.value.flatten(order='F')),
                         y: (idxs, idxs, x.value.flatten(order='F'))}
         return jacobian_dict
