@@ -4,8 +4,7 @@ import pytest
 import cvxpy as cp
 
 
-class TestHessAdd():
-
+class TestHessIndex():
 
     def test_single_idx(self):
         n = 3 
@@ -58,7 +57,7 @@ class TestHessAdd():
         x = cp.Variable((2, 2), name='x')
         x.value = np.array([[1.0, 2.0], [3.0, 4.0]])
         vec = np.array([5, 6])
-        rows, cols = np.array([0, 0]), np.array([1, 0])
+        rows, cols = np.array([0, 0]), np.array([0, 1])
         logx = cp.log(x)[rows, cols]
         result_dict = logx.hess_vec(vec)
         correct_matrix = 5 * (-np.diag(np.array([1.0, 0, 0, 0]))) + \
