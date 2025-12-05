@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 
+from cvxpy.reductions.cvx_attr2constr import CvxAttr2Constr
 import cvxpy.utilities as u
 import cvxpy.utilities.performance_utils as perf
 from cvxpy import Constant, error
@@ -1220,7 +1221,7 @@ class Problem(u.Canonical):
                 reductions = [FlipObjective()]
             else:
                 reductions = []
-            reductions = reductions + [Dnlp2Smooth()]
+            reductions = reductions + [CvxAttr2Constr(reduce_bounds=False), Dnlp2Smooth()]
             # instantiate based on user provided solver
             # (default to Ipopt)
             if solver is s.IPOPT or solver is None:
